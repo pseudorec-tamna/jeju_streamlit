@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 
+
 def main():
     # Show title and description.
     st.title("💬 Chatbot")
@@ -57,4 +58,4 @@ def main():
             st.session_state.messages.append({"role": "assistant", "content": response})
 
 if __name__ == '__main__':
-    main()
+    main()  
