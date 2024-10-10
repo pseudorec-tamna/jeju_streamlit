@@ -222,7 +222,7 @@ def get_bot_response(
 
 if __name__ == "__main__":
     chat_history = []
-
+    
     response = get_bot_response(
         ChatState(
             operation_mode=OperationMode.CONSOLE,
