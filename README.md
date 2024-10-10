@@ -6,6 +6,8 @@ A simple Streamlit app that shows how to build a chatbot using OpenAI's GPT-3.5.
 
 ### How to run it on your own machine
 
+- python version : 3.11.0
+
 1. Install the requirements
 
    ```
