@@ -65,13 +65,15 @@ def prepare_app():
 
     SAMPLE_QUERIES_KOR = os.getenv(
         "SAMPLE_QUERIES_KOR",
-        "/일반 추천 모드, /집계 모드"
+        "/일반 추천 모드, /집계 모드",
+        "/gen_llm, /text_2_sql_llm"
     )
     st.session_state.sample_queries_kor = [q.strip() for q in SAMPLE_QUERIES_KOR.split(",")]
 
     SAMPLE_QUERIES = os.getenv(
         "SAMPLE_QUERIES",
-        "/General Recommendation Mode, /Aggregation Mode"
+        "/General Recommendation Mode, /Aggregation Mode",
+        "/gen_llm, /text_2_sql_llm"
     )
     st.session_state.sample_queries = [q.strip() for q in SAMPLE_QUERIES.split(",")]
     st.session_state.default_mode = mode_options[0]
