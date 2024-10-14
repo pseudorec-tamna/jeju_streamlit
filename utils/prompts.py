@@ -67,6 +67,47 @@ CHAT_WITH_DOCS_PROMPT = ChatPromptTemplate.from_messages(
     ]
 )
 
+chat_greet_template = """
+        현재 제주도의 날씨를 기반으로 친근하고 재미있으며 약간 재치 있는 인사말을 만들어주세요.
+        오늘 날짜는 {date}이고, 현재 시간은 {time}입니다. 인사말을 만들 때 연중 날짜와 시간대를 고려해주세요.
+        예를 들어:
+        - 만약 오늘이 12월 31일이라면, 특별한 날임을 언급하고 축하할 만한 식사를 제안하세요.
+        - 만약 점심시간(오전 11시 ~ 오후 2시)이라면, 점심 메뉴를 제안하세요.
+        - 만약 저녁시간(오후 5시 ~ 오후 8시)이라면, 저녁 메뉴를 제안하세요.
+        - 제주도의 지역 음식인 '흑돼지', '전복죽', '고등어회', '고기국수', '딱새우', '성게 미역국', '오메기떡', '갈치조림' 등을 우선적으로 제안하되, 적절하지 않다면 일반적인 음식을 제안하세요.
+        
+        현재 기온({temperature}°C)과 날씨 상태({weather_condition})를 언급하세요.
+        메시지를 재미있고 상황에 맞게 개인화해주세요.
+        
+        예시 형식:
+        1.
+        - 인사말: "오늘 기온은 {temperature}°C로, {weather_condition}입니다. {time}인 지금, 제주도의 유명한 흑돼지 BBQ로 멋진 저녁을 즐겨보는 건 어떨까요?"
+        
+        2.
+        - 인사말: "현재 기온은 {temperature}°C이며, {weather_condition}입니다. 상쾌한 점심을 즐기기 딱 좋은 시간이에요. 제주식 해물구이로 하루를 즐겨보세요!"
+        
+        3.
+        - 인사말: "오늘은 12월 31일, 특별한 날이에요! 기온은 {temperature}°C로, {weather_condition}입니다. 한 해의 마무리를 제주도의 유명한 해물탕으로 축하해보는 건 어떨까요?"
+        
+        4.
+        - 인사말: "기온은 {temperature}°C이고, {weather_condition}입니다. 저녁시간에 약간 쌀쌀하니, 제주 갈치조림으로 몸을 녹여보세요!"
+        
+        5.
+        - 인사말: "좋은 오후입니다! 제주도는 현재 기온 {temperature}°C에 {weather_condition}입니다. 신선한 해산물과 시원한 음료로 맛있는 점심을 즐겨보세요!"
+        
+        6.
+        - 인사말: "오늘 제주도는 아름다운 맑은 날씨에 기온이 {temperature}°C입니다. 점심시간인 지금, 더위를 이길 수 있는 제주 냉면 한 그릇은 어떠세요?"
+        
+        안녕하세요는 생락하고, 톤을 친근하고 매력적으로 유지하며, 음식 제안이 세심하게 느껴지도록 해주세요. 따옴표 없이 인사말은 최대한 간단하게 {flag} 적어주세요. 
+        """
+CHAT_GREETING_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", chat_greet_template),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("user", "{message}"),
+    ]
+)
+
 qa_template_summarize_kb = """You are a helpful Assistant AI who has been equipped with your own special knowledge base. In response to the user's query you have retrieved the most relevant parts of your knowledge base you could find:
 
 {context}

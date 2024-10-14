@@ -5,7 +5,7 @@ import streamlit as st
 from components.llm import CallbackHandlerDDGConsole
 # from docdocgo import do_intro_tasks
 from utils.chat_state import ChatState
-from utils.prepare import DEFAULT_OPENAI_API_KEY
+from utils.prepare import GEMINI_API_KEY
 # from utils.streamlit.fix_event_loop import remove_tornado_fix
 # from utils.type_utils import OperationMode
 from utils.streamlit.helpers import mode_options
@@ -46,13 +46,13 @@ def prepare_app():
             CallbackHandlerDDGConsole(),
             "placeholder for CallbackHandlerDDGStreamlit",
         ],
-        openai_api_key=DEFAULT_OPENAI_API_KEY,
+        google_api_key=GEMINI_API_KEY,
     )
 
-    st.session_state.prev_supplied_openai_api_key = None
-    st.session_state.default_openai_api_key = DEFAULT_OPENAI_API_KEY
-    if st.session_state.default_openai_api_key == "DUMMY NON-EMPTY VALUE": # DUMMY_OPENAI_API_KEY_PLACEHOLDER:
-        st.session_state.default_openai_api_key = ""
+    st.session_state.prev_supplied_gemini_api_key = None
+    st.session_state.gemini_api_key = GEMINI_API_KEY
+    if st.session_state.gemini_api_key == "DUMMY NON-EMPTY VALUE": # DUMMY_OPENAI_API_KEY_PLACEHOLDER:
+        st.session_state.gemini_api_key = ""
 
     st.session_state.idx_file_upload = -1
     st.session_state.uploader_form_key = "uploader-form"

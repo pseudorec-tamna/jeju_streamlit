@@ -5,7 +5,7 @@ from typing import Any
 import streamlit as st
 from pydantic import BaseModel
 
-# from utils.type_utils import ChatMode
+from utils.type_utils import ChatMode
 
 WELCOME_TEMPLATE_COLL_IN_URL = """\
 Welcome! You are now using the `{}` collection. \
@@ -49,58 +49,39 @@ If you are done uploading, you can rename it:
 /db rename my-cool-collection-name
 ```
 """
-
-mode_option_to_prefix = {
-    "/kb (main mode)": (
-        "",  # TODO: this presupposes that DEFAULT_MODE is /kb
-        "Chat using the current collection as a knowledge base.",
+age_options = {
+    "10대": (
+        "/10 ",
+        "10대 입맛에 맞는 음식점 및 카페를 추천해드리겠습니다.",
+        "I will recommend restaurants and cafes suitable for teens' tastes."
     ),
-    "/research": (
-        "/re ",
-        "Research a topic on the web.",
+    "20대": (
+        "/20 ",
+        "20대 입맛에 맞는 음식점 및 카페를 추천해드리겠습니다.",
+        "I will recommend restaurants and cafes suitable for people in their 20s."
     ),
-    "/research heatseek": (
-        "/re hs ",
-        "Find sites that have specific information you need.",
+    "30대": (
+        "/30 ",
+        "30대 입맛에 맞는 음식점 및 카페를 추천해드리겠습니다.",
+        "I will recommend restaurants and cafes suitable for people in their 30s."
     ),
-    "/summarize": (
-        "/su ",
-        "Summarize the content of a URL and ingest into a collection.",
+    "40대": (
+        "/40 ",
+        "40대 입맛에 맞는 음식점 및 카페를 추천해드리겠습니다.",
+        "I will recommend restaurants and cafes suitable for people in their 40s."
     ),
-    "/ingest": (
-        "/in ",
-        "Ingest content from a URL into a collection.",
+    "50대": (
+        "/50 ",
+        "50대 입맛에 맞는 음식점 및 카페를 추천해드리겠습니다.",
+        "I will recommend restaurants and cafes suitable for people in their 50s."
     ),
-    "/db": (
-        "/db ",
-        "Manage your collections.",
-    ),
-    "/export": (
-        "/ex ",
-        "Export your current chat history.",
-    ),
-    "/share": (
-        "/sh ",
-        "Create a shareable link to the current collection.",
-    ),
-    "/web": (
-        "/we ",
-        "Do a quick web research without ingesting the content.",
-    ),
-    "/details": (
-        "/de ",
-        "Provide details on everything retrieved from the collection in response to your query.",
-    ),
-    "/quotes": (
-        "/qu ",
-        "Provide quotes from the collection in relevant to your query.",
-    ),
-    "/chat": (
-        "/ch ",
-        "Regular chat, without retrieving information from the current collection.",
+    "60대": (
+        "/60 ",
+        "60대 입맛에 맞는 음식점 및 카페를 추천해드리겠습니다.",
+        "I will recommend restaurants and cafes suitable for people in their 60s."
     ),
 }
-mode_options = list(mode_option_to_prefix.keys())
+mode_options = list(age_options.keys())
 
 chat_with_docs_status_config = {
     "thinking.header": "One sec...",
@@ -139,17 +120,17 @@ summarize_status_config = chat_with_docs_status_config | {
     "complete.body": "Summary composed and retrieved content added to the document collection.",
 }
 
-# status_config = {
-#     ChatMode.JUST_CHAT_COMMAND_ID: just_chat_status_config,
-#     ChatMode.CHAT_WITH_DOCS_COMMAND_ID: chat_with_docs_status_config,
-#     ChatMode.DETAILS_COMMAND_ID: chat_with_docs_status_config,
-#     ChatMode.QUOTES_COMMAND_ID: chat_with_docs_status_config,
-#     ChatMode.HELP_COMMAND_ID: chat_with_docs_status_config,
-#     ChatMode.WEB_COMMAND_ID: web_status_config,
-#     ChatMode.RESEARCH_COMMAND_ID: research_status_config,
-#     ChatMode.INGEST_COMMAND_ID: ingest_status_config,
-#     ChatMode.SUMMARIZE_COMMAND_ID: summarize_status_config,
-# }
+status_config = {
+    ChatMode.JUST_CHAT_COMMAND_ID: just_chat_status_config,
+    # ChatMode.CHAT_WITH_DOCS_COMMAND_ID: chat_with_docs_status_config,
+    # ChatMode.DETAILS_COMMAND_ID: chat_with_docs_status_config,
+    # ChatMode.QUOTES_COMMAND_ID: chat_with_docs_status_config,
+    # ChatMode.HELP_COMMAND_ID: chat_with_docs_status_config,
+    # ChatMode.WEB_COMMAND_ID: web_status_config,
+    # ChatMode.RESEARCH_COMMAND_ID: research_status_config,
+    # ChatMode.INGEST_COMMAND_ID: ingest_status_config,
+    # ChatMode.SUMMARIZE_COMMAND_ID: summarize_status_config,
+}
 
 STAND_BY_FOR_INGESTION_MESSAGE = (
     "\n\n--- \n\n> **PLEASE STAND BY WHILE CONTENT IS INGESTED...**"
@@ -214,7 +195,7 @@ def show_sources(
     # If the cb handler is provided, remove the stand-by message
     if callback_handler and callback_handler.end_str_printed:
         callback_handler.container.markdown(fix_markdown(callback_handler.buffer))
-    
+
     if not sources:
         return
     with st.expander("Sources"):

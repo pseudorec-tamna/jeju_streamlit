@@ -6,6 +6,7 @@ from langchain_core.language_models import BaseChatModel
 from utils.prepare import (
     LLM_REQUEST_TIMEOUT,
 )
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -15,6 +16,7 @@ from utils.lang_utils import msg_list_chat_history_to_string
 from streamlit.delta_generator import DeltaGenerator
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 from utils.streamlit.helpers import fix_markdown
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 class CallbackHandlerDDGStreamlit(BaseCallbackHandler):
@@ -48,6 +50,20 @@ class CallbackHandlerDDGStreamlit(BaseCallbackHandler):
         if self.end_str:
             self.end_str_printed = True
             self.container.markdown(fix_markdown(self.buffer + self.end_str))
+
+def get_llm_with_gemini(
+    settings: BotSettings, api_key: str | None = None, callbacks: CallbacksOrNone = None
+) -> BaseChatModel:
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash",
+        google_api_key=api_key,  # 여기에 실제 API 키를 입력하세요
+        temperature=settings.temperature,
+        request_timeout=LLM_REQUEST_TIMEOUT,
+        streaming=True,
+        callbacks=callbacks,
+        verbose=True,  # tmp
+    )
+    return llm
 
 
 def get_llm_with_callbacks(
@@ -103,7 +119,7 @@ def get_llm(
     """
     if callbacks is None:
         callbacks = [CallbackHandlerDDGConsole(init_str)] if stream else []
-    return get_llm_with_callbacks(settings, api_key, callbacks)
+    return get_llm_with_gemini(settings, api_key, callbacks)
 
 
 def get_prompt_llm_chain(
