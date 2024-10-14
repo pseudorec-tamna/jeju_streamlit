@@ -169,7 +169,7 @@ def age():
         selected_age_groups = st.multiselect(
             "나이대 복수 선택 가능", # 더 맞춤형 서비스를 제공해드리겠습니다. 
             options=list(age_options.keys()),
-            default=chat_state.selected_age_groups,
+            default=[],
             key="age_multiselect"
         )
         
@@ -221,7 +221,6 @@ def gender():
             else:
                 chat_state.gender = "여성"
 
-
 def car():
     # 사이드바에 주차 선택 버튼 추가
     with st.expander("주차 유무 선택", expanded=True):
@@ -246,31 +245,24 @@ def food_selection():
     food_types = ["한식", "일식", "중식", "양식", "멕시코 음식", "기타"]
 
     # 세션 상태 초기화
-    # if 'selected_foods' not in st.session_state:
-        # chat_state.selected_foods = []
+    # if 'selected_foods' not in chat_state:
+    #     chat_state.selected_foods = []
 
     with st.expander("음식 종류 선택", expanded=True):
         st.write("어떤 음식을 드시고 싶으신가요? (복수 선택 가능)")
         
-        cols = st.columns(3)  # 3열로 나누어 표시
-        for i, food in enumerate(food_types):
-            col = cols[i % 3]
-            if col.button(
-                food,
-                key=f"food_{food}",
-                help=f"{food} 선택",
-                type="primary" if food in chat_state.selected_foods else "secondary"
-            ):
-                if food in chat_state.selected_foods:
-                    chat_state.selected_foods.remove(food)
-                else:
-                    chat_state.selected_foods.append(food)
+        selected_foods = []
+        for food in food_types:
+            if st.checkbox(food, key=f"food_{food}"):
+                selected_foods.append(food)
         
-        if chat_state.selected_foods:
-            st.write("선택된 음식 종류:")
-            st.write(", ".join(chat_state.selected_foods))
-        else:
-            st.write("아직 선택된 음식이 없습니다.")
+        chat_state.selected_foods = selected_foods
+
+        # if chat_state.selected_foods:
+        #     st.write("선택된 음식 종류:")
+        #     st.write(", ".join(chat_state.selected_foods))
+        # else:
+        #     st.write("아직 선택된 음식이 없습니다.")
 
 def price():
     # Settings
@@ -351,7 +343,30 @@ def title_header(logo, title):
 def format_robot_response(message):
     return f'''<div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffb74d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #e65100; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-size: 16px;">
         <strong>🍊:</strong> {message} </div>'''
-        
+
+def llm_method_button(eng_flag):
+    # Show sample queries
+    clicked_sample_query = None
+    for _ in range(2):
+        st.write("")
+
+    if eng_flag:
+        cols = ss.sample_queries
+    else:
+        cols = ss.sample_queries_kor
+
+    for i, (btn_col, sample_query, chat_mode) in enumerate(zip(st.columns(2), cols)):
+        with btn_col:
+            if st.button(sample_query, key=f"query{i}"):
+                clicked_sample_query = chat_mode   
+
+    parsed_query = parse_query(clicked_sample_query)
+    chat_state.update(parsed_query=parsed_query)
+    
+    chat_input_text = f"[{ss.default_mode}] " if cmd_prefix else ""
+    chat_input_text = limit_num_characters(chat_input_text + coll_name_as_shown, 35) + "/"
+    full_query = st.chat_input(chat_input_text)    
+
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
@@ -422,16 +437,6 @@ def main():
             open_ai_chat(eng_flag=True)
 
 
-            # Show sample queries
-            clicked_sample_query = None
-            for _ in range(2):
-                st.write("")
-            for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), ss.sample_queries)):
-                with btn_col:
-                    if st.button(sample_query, key=f"query{i}"):
-                        clicked_sample_query = sample_query
-            
-        
         else:
             title_header(logo, "")
             st.title("탐라는 맛 AI와 함께하는 미식 여행에 오신 것을 환영합니다!")
@@ -460,16 +465,6 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat()
-
-
-            # Show sample queries
-            clicked_sample_query = None
-            for _ in range(2):
-                st.write("")
-            for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), ss.sample_queries_kor)):
-                with btn_col:
-                    if st.button(sample_query, key=f"query{i}"):
-                        clicked_sample_query = sample_query   
 
 
 
