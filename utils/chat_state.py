@@ -80,7 +80,7 @@ class ChatState:
         add_to_output: Callable | None = None,
         bot_settings: BotSettings | None = None,
         user_id: str | None = None,  # NOTE: should switch to "" instead of None
-        openai_api_key: str | None = None,
+        google_api_key: str | None = None,
         # scheduled_queries: ScheduledQueries | None = None,
         access_role_by_user_id_by_coll: dict[str, dict[str, AccessRole]] | None = None,
         access_code_by_coll_by_user_id: dict[str, dict[str, str]] | None = None,
@@ -100,7 +100,7 @@ class ChatState:
         )
         self.bot_settings = bot_settings or BotSettings()
         self.user_id = user_id
-        self.openai_api_key = openai_api_key
+        self.google_api_key = google_api_key
         # self.scheduled_queries = scheduled_queries or ScheduledQueries()
         self._access_role_by_user_id_by_coll = access_role_by_user_id_by_coll or {}
         self._access_code_by_coll_by_user_id = access_code_by_coll_by_user_id or {}
