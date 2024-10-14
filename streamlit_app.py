@@ -80,28 +80,29 @@ if "chat_state" not in ss:
 
 chat_state: ChatState = ss.chat_state
 
-def open_ai_chat(parsed_query=None, eng_flag=False):
+def open_ai_chat(eng_flag=False):
     if "messages" not in ss:
         ss.messages = []
 
+    # 기존 메시지 표시
     for message in ss.messages:
-        with st.chat_message(message["role"]):
+        with st.chat_message(message["role"], avatar=message.get("avatar")):
             st.markdown(message["content"])
 
     # Chat 입력창 설명 
-    if eng_flag == True:
+    if eng_flag:
         temp_prompt = st.chat_input("How can I assist you?")
     else:
         temp_prompt = st.chat_input("무엇을 도와드릴까요?")
 
     if prompt := temp_prompt:
+        # Parse the query or get the next scheduled query, if any
+        parsed_query = parse_query(prompt, predetermined_chat_mode=ChatMode.JUST_CHAT_COMMAND_ID)
+        chat_state.update(parsed_query=parsed_query)
+
         ss.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=ss.user_avatar):
             st.markdown(prompt)
-
-        parsed_query.message = prompt
-        parsed_query.chat_mode = ChatMode.JUST_CHAT_COMMAND_ID
-        chat_state.update(parsed_query=parsed_query)
 
         with st.chat_message("assistant", avatar=ss.bot_avatar):
             try:
@@ -124,7 +125,6 @@ def open_ai_chat(parsed_query=None, eng_flag=False):
             response = get_bot_response(chat_state)
             answer = response["answer"]
 
-
             # Display the "complete" status - custom or default
             if status:
                 default_status = status_config.get(chat_mode, just_chat_status_config)
@@ -134,13 +134,13 @@ def open_ai_chat(parsed_query=None, eng_flag=False):
                 )
                 status.write(response.get("status.body", default_status["complete.body"]))
 
-
             # Add the response to the chat history
             chat_state.chat_history.append((prompt, answer))
 
-
             message_placeholder.markdown(answer)
         ss.messages.append({"role": "assistant", "content": answer})
+        # 페이지 새로고침
+        st.rerun()
     # else:
     #     st.info("OpenAI API 키를 입력해주세요.", icon="🗝️")
 
@@ -156,7 +156,8 @@ def user_id_setting():
         chat_state.user_id = None
     else:
         chat_state.user_id = user_id
-        chat_state.chat_history.append(("사용자 이름: ", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름: "+user_id))
+        chat_state.chat_history.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
+        chat_state.chat_history_all.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
 
 def age():
     # 세션 상태 초기화
@@ -360,8 +361,6 @@ def main():
     # 로고 이미지 로드
     logo = Image.open("media/탐라logo_w_horizon.png")
 
-    parsed_query = parse_query("")
-
     # 세션 상태에 페이지 상태 초기화
     if 'page' not in ss:
         ss.page = 'language_select'
@@ -396,11 +395,11 @@ def main():
 
             # 날씨, 시간에 따른 인사말을 세션 상태에 저장
             if 'greeting_message' not in ss:
-                parsed_query.chat_mode = ChatMode.JUST_CHAT_GREETING_ID
-                chat_state.flag = "영어로"
+                parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
+                chat_state.flag = "영어로" 
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
-            
+
             # 사용자 ID에 따른 전체 메시지 생성 
             if chat_state.user_id is not None:
                 full_message = f"{chat_state.user_id}님 {ss.greeting_message}"
@@ -410,7 +409,7 @@ def main():
             # 채팅 히스토리에 메시지 추가 (필요한 경우)
             if full_message not in [msg for msg, _ in chat_state.chat_history]:
                 chat_state.chat_history.append((full_message, ""))
-                chat_state.chat_history_all.append((None, full_message))
+                chat_state.chat_history_all.append(("", full_message))
                 chat_state.sources_history.append(None)
 
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
@@ -419,6 +418,9 @@ def main():
             #     "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
             #     "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys)."
             # )
+
+            open_ai_chat(eng_flag=True)
+
 
             # Show sample queries
             clicked_sample_query = None
@@ -429,7 +431,6 @@ def main():
                     if st.button(sample_query, key=f"query{i}"):
                         clicked_sample_query = sample_query
             
-            open_ai_chat(parsed_query=parsed_query, eng_flag=True)
         
         else:
             title_header(logo, "")
@@ -439,7 +440,7 @@ def main():
 
             # 날씨, 시간에 따른 인사말을 세션 상태에 저장
             if 'greeting_message' not in ss:
-                parsed_query.chat_mode = ChatMode.JUST_CHAT_GREETING_ID
+                parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.flag = ""
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
@@ -453,10 +454,13 @@ def main():
             # 채팅 히스토리에 메시지 추가 (필요한 경우)
             if full_message not in [msg for msg, _ in chat_state.chat_history]:
                 chat_state.chat_history.append((full_message, ""))
-                chat_state.chat_history_all.append((None, full_message))
+                chat_state.chat_history_all.append(("", full_message))
                 chat_state.sources_history.append(None)
 
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
+
+            open_ai_chat()
+
 
             # Show sample queries
             clicked_sample_query = None
@@ -468,7 +472,6 @@ def main():
                         clicked_sample_query = sample_query   
 
 
-            open_ai_chat(parsed_query=parsed_query)
 
 
 if __name__ == '__main__':
