@@ -50,11 +50,6 @@ def prepare_app():
         google_api_key=GEMINI_API_KEY,
     )
 
-    st.session_state.memory = ConversationBufferWindowMemory(k=5, 
-                                                             memory_key="chat_history", 
-                                                             return_messages=True)
-
-
     st.session_state.prev_supplied_gemini_api_key = None
     st.session_state.gemini_api_key = GEMINI_API_KEY
     if st.session_state.gemini_api_key == "DUMMY NON-EMPTY VALUE": # DUMMY_OPENAI_API_KEY_PLACEHOLDER:
