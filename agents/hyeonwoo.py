@@ -24,13 +24,13 @@ import requests, time
 import subprocess
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
 from recommendation.prompt import template_sql_prompt
-from tamla import load_memory
+# from tamla import load_memory
 
-df = pd.read_csv("/Users/choco/Documents/project/bigcontest2024/data/additional_info.csv", encoding='cp949')
+df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
 df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
 df = df.reset_index(drop=True)
 
-database = pd.read_csv("/Users/choco/Documents/project/bigcontest2024/data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
+database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
 meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
 df = df.merge(meta_info[["MCT_NM", "MCT_TYPE"]], how="left", on="MCT_NM")
 
