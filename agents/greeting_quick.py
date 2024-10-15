@@ -136,11 +136,11 @@ def get_greeting_chat_chain(
 
     # Initialize the Gemini 1.5 Flash LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
+        model=chat_state.bot_settings.llm_model_name,
         google_api_key=chat_state.google_api_key
     )
 
-    chain = LLMChain(llm=llm, prompt=prompt_qa)
+    chain = LLMChain(llm=llm, prompt=prompt_qa, memory=)
 
     # 현재 제주 날씨 API 
     weather_dict = jeju_weather_dict()

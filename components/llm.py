@@ -5,6 +5,7 @@ from utils.type_utils import BotSettings, CallbacksOrNone
 from langchain_core.language_models import BaseChatModel
 from utils.prepare import (
     LLM_REQUEST_TIMEOUT,
+    MODEL_NAME
 )
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompt_values import ChatPromptValue
@@ -55,7 +56,7 @@ def get_llm_with_gemini(
     settings: BotSettings, api_key: str | None = None, callbacks: CallbacksOrNone = None
 ) -> BaseChatModel:
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
+        model=MODEL_NAME,
         google_api_key=api_key,  # 여기에 실제 API 키를 입력하세요
         temperature=settings.temperature,
         request_timeout=LLM_REQUEST_TIMEOUT,

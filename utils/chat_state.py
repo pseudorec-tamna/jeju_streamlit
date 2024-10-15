@@ -31,6 +31,7 @@ from utils.type_utils import (
     OperationMode,
     PairwiseChatHistory,
     Props,
+    MemoryMode
 )
 from langchain_core.documents import Document
 
@@ -85,6 +86,7 @@ class ChatState:
         access_role_by_user_id_by_coll: dict[str, dict[str, AccessRole]] | None = None,
         access_code_by_coll_by_user_id: dict[str, dict[str, str]] | None = None,
         uploaded_docs: list[Document] | None = None,
+        memory: MemoryMode | None = None,
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
     ) -> None: 
@@ -105,6 +107,7 @@ class ChatState:
         self._access_role_by_user_id_by_coll = access_role_by_user_id_by_coll or {}
         self._access_code_by_coll_by_user_id = access_code_by_coll_by_user_id or {}
         self.uploaded_docs = uploaded_docs or []
+        self.memory = memory or []
 
     # @property
     # def collection_name(self) -> str:
