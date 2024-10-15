@@ -3,7 +3,6 @@ import streamlit as st
 from PIL import Image
 from utils.prepare import (
     get_logger,
-    DEFAULT_OPENAI_API_KEY,
     GEMINI_API_KEY
 )
 from utils.query_parsing import parse_query
@@ -157,7 +156,7 @@ def user_id_setting():
     else:
         chat_state.user_id = user_id
         chat_state.chat_history.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
-        chat_state.chat_history_all.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
+        chat_state.chat_history_all.append(("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+"."))
 
 def age():
     # 세션 상태 초기화
@@ -355,17 +354,17 @@ def llm_method_button(eng_flag):
     else:
         cols = ss.sample_queries_kor
 
-    for i, (btn_col, sample_query, chat_mode) in enumerate(zip(st.columns(2), cols)):
+    for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), cols)):
         with btn_col:
-            if st.button(sample_query, key=f"query{i}"):
-                clicked_sample_query = chat_mode   
+            if st.button(sample_query[:2], key=f"query{i}"):
+                clicked_sample_query = sample_query[-2:]   
 
     parsed_query = parse_query(clicked_sample_query)
     chat_state.update(parsed_query=parsed_query)
-    
-    chat_input_text = f"[{ss.default_mode}] " if cmd_prefix else ""
-    chat_input_text = limit_num_characters(chat_input_text + coll_name_as_shown, 35) + "/"
-    full_query = st.chat_input(chat_input_text)    
+
+    # chat_input_text = f"[{ss.default_mode}] " if cmd_prefix else ""
+    # chat_input_text = limit_num_characters(chat_input_text + coll_name_as_shown, 35) + "/"
+    # full_query = st.chat_input(chat_input_text)    
 
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
@@ -399,7 +398,6 @@ def main():
                 ss.page = 'main_app'
                 st.rerun()
     
-
     # 메인 앱 페이지
     elif ss.page == 'main_app':
         if ss.language == "English":
@@ -407,32 +405,23 @@ def main():
             st.title("Welcome to the Culinary Journey with Tamna's Flavor AI!")
             # English content here
             st.markdown(GREETING_MESSAGE_ENG)
-
-            # 날씨, 시간에 따른 인사말을 세션 상태에 저장
+            # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.flag = "영어로" 
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
 
-            # 사용자 ID에 따른 전체 메시지 생성 
-            if chat_state.user_id is not None:
-                full_message = f"{chat_state.user_id}님 {ss.greeting_message}"
-            else: 
-                full_message = ss.greeting_message
-            
-            # 채팅 히스토리에 메시지 추가 (필요한 경우)
+            # 사용자 ID에 따른 전체 메시지 생성
+            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id else ss.greeting_message
+
+            # 채팅 히스토리에 새 메시지 추가
             if full_message not in [msg for msg, _ in chat_state.chat_history]:
-                chat_state.chat_history.append((full_message, ""))
+                chat_state.chat_history.append(("", full_message))
                 chat_state.chat_history_all.append(("", full_message))
                 chat_state.sources_history.append(None)
 
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
-            
-            # st.write(
-            #     "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-            #     "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys)."
-            # )
 
             open_ai_chat(eng_flag=True)
 
@@ -442,23 +431,19 @@ def main():
             st.title("탐라는 맛 AI와 함께하는 미식 여행에 오신 것을 환영합니다!")
             # Korean content here
             st.markdown(GREETING_MESSAGE_KOR)
-
-            # 날씨, 시간에 따른 인사말을 세션 상태에 저장
+            # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.flag = ""
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
-            
-            # 사용자 ID에 따른 전체 메시지 생성 
-            if chat_state.user_id is not None:
-                full_message = f"{chat_state.user_id}님 {ss.greeting_message}"
-            else: 
-                full_message = ss.greeting_message
-            
-            # 채팅 히스토리에 메시지 추가 (필요한 경우)
-            if full_message not in [msg for msg, _ in chat_state.chat_history]:
-                chat_state.chat_history.append((full_message, ""))
+
+            # 사용자 ID를 포함한 전체 메시지 생성
+            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id else ss.greeting_message
+
+            # 채팅 히스토리에 새 메시지 추가
+            if full_message not in (msg for msg, _ in chat_state.chat_history):
+                chat_state.chat_history.append(("", full_message))
                 chat_state.chat_history_all.append(("", full_message))
                 chat_state.sources_history.append(None)
 

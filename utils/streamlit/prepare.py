@@ -10,6 +10,7 @@ from utils.prepare import GEMINI_API_KEY
 # from utils.type_utils import OperationMode
 from utils.streamlit.helpers import mode_options
 from utils.type_utils import OperationMode
+from langchain.memory import ConversationBufferWindowMemory
 
 
 def prepare_app():
@@ -49,6 +50,11 @@ def prepare_app():
         google_api_key=GEMINI_API_KEY,
     )
 
+    st.session_state.memory = ConversationBufferWindowMemory(k=5, 
+                                                             memory_key="chat_history", 
+                                                             return_messages=True)
+
+
     st.session_state.prev_supplied_gemini_api_key = None
     st.session_state.gemini_api_key = GEMINI_API_KEY
     if st.session_state.gemini_api_key == "DUMMY NON-EMPTY VALUE": # DUMMY_OPENAI_API_KEY_PLACEHOLDER:
@@ -65,15 +71,13 @@ def prepare_app():
 
     SAMPLE_QUERIES_KOR = os.getenv(
         "SAMPLE_QUERIES_KOR",
-        "/일반 추천 모드, /집계 모드",
-        "/gen_llm, /text_2_sql_llm"
+        "/일반 추천 모드, /집계 모드, /gen_llm, /text_2_sql_llm"
     )
     st.session_state.sample_queries_kor = [q.strip() for q in SAMPLE_QUERIES_KOR.split(",")]
 
     SAMPLE_QUERIES = os.getenv(
         "SAMPLE_QUERIES",
-        "/General Recommendation Mode, /Aggregation Mode",
-        "/gen_llm, /text_2_sql_llm"
+        "/General Recommendation Mode, /Aggregation Mode, /gen_llm, /text_2_sql_llm"
     )
     st.session_state.sample_queries = [q.strip() for q in SAMPLE_QUERIES.split(",")]
     st.session_state.default_mode = mode_options[0]

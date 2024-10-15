@@ -11,12 +11,19 @@ from utils.prompts import (
 from components.llm import get_prompt_llm_chain
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from agents.greeting_quick import get_greeting_chat_chain
+from agents.hyeonwoo import get_hw_response
 from utils.type_utils import ChatMode
+from langchain.memory import ConversationBufferWindowMemory
 
 logger = get_logger()
 
 default_vectorstore = None  # can move to chat_state
 
+
+# memory management
+def load_memory(input, chat_state):
+    memory_vars = chat_state.memory.memory.load_memory_variables({})
+    return memory_vars.get("chat_history", [])
 
 
 def get_bot_response(
@@ -37,13 +44,15 @@ def get_bot_response(
             {
                 "message": chat_state.message,
                 "chat_history": pairwise_chat_history_to_msg_list(
-                    chat_state.chat_history
+                    chat_state.chat_history 
                 ),
             }
         )
         return {"answer": answer}
     elif chat_mode_val == ChatMode.JUST_CHAT_GREETING_ID.value:
         return get_greeting_chat_chain(chat_state)
+    elif chat_mode_val == ChatMode.CHAT_HW_ID.value:
+        return get_hw_response(chat_state)
     else:
         # Should never happen
         raise ValueError(f"Invalid chat mode: {chat_state.chat_mode}")
@@ -56,7 +65,7 @@ if __name__ == "__main__":
         ChatState(
             operation_mode=OperationMode.CONSOLE,
             chat_history=chat_history,
-            google_api_key=GOOGLE_API_KEY,
+            google_api_key=DEFAULT_OPENAI_API_KEY,
             user_id=None,  # would be set to None by default but just to be explicit
         )
     )
