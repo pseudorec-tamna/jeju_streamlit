@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 from utils.prepare import MODEL_NAME, TEMPERATURE
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain.memory import ConversationBufferMemory
+from typing import ClassVar
+from langchain.memory.chat_memory import InMemoryChatMessageHistory
 
 JSONish = str | int | float | dict[str, "JSONish"] | list["JSONish"]
 JSONishDict = dict[str, JSONish]
@@ -138,5 +140,5 @@ class Doc(BaseModel):
     def to_lc_doc(self) -> Document:
         return Document(page_content=self.page_content, metadata=self.metadata)
 
-class MemoryMode(BaseModel):
+class MemoryMode():
     memory = ConversationBufferMemory(return_messages=True, memory_key="chat_history")

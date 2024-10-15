@@ -25,7 +25,6 @@ def load_memory(input, chat_state):
     memory_vars = chat_state.memory.memory.load_memory_variables({})
     return memory_vars.get("chat_history", [])
 
-
 def get_bot_response(
     chat_state: ChatState,
 ):
