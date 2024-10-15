@@ -140,7 +140,7 @@ def get_greeting_chat_chain(
         google_api_key=chat_state.google_api_key
     )
 
-    chain = LLMChain(llm=llm, prompt=prompt_qa, memory=)
+    chain = LLMChain(llm=llm, prompt=prompt_qa)
 
     # 현재 제주 날씨 API 
     weather_dict = jeju_weather_dict()
