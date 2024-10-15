@@ -25,6 +25,7 @@ import subprocess
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
 from recommendation.prompt import template_sql_prompt
 # from tamla import load_memory
+from utils.lang_utils import pairwise_chat_history_to_msg_list
 
 df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
 df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
@@ -34,10 +35,15 @@ database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
 meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
 df = df.merge(meta_info[["MCT_NM", "MCT_TYPE"]], how="left", on="MCT_NM")
 
+def load_memory(input, chat_state):
+    # print("chat_state:", chat_state.memory)
+    memory_vars = chat_state.memory.load_memory_variables({})
+    memory_vars["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
+    # print("chat_history:", memory_vars["chat_history"])
+    # memory_vars.get("chat_history", [])
+    return memory_vars.get("chat_history", [])
 
-def get_hw_response(
-        chat_state: ChatState):
-    
+def get_hw_response(chat_state: ChatState):
     # Initialize the Gemini 1.5 Flash LLM
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
@@ -46,22 +52,19 @@ def get_hw_response(
 
     response = sub_task_detection(chat_state.message)
     response_type = json_format(response)["response_type"]
-    print(
-        "response: ", response
-    )
+
     if response_type == "Chat":
-        chain = RunnablePassthrough.assign(chat_history=load_memory) | chat_prompt_template | llm
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm
         result = chain.invoke({"question": chat_state.message})
 
     elif response_type == "Recommendation":
         
         if json_format(response)["recommendation_type"] == "Distance-based":
-            chain = RunnablePassthrough.assign(chat_history=load_memory) | recommendation_prompt_template | llm
+            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm
             coord = get_coordinates_by_question(chat_state.message)
             print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
 
             from IPython.display import IFrame
-            # ?latitude={latitude}&longitude={longitude}
             latitude, longitude = coord  # coord에서 위도와 경도 추출
             display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
             
@@ -77,10 +80,10 @@ def get_hw_response(
             rec = coordinates_based_recommendation((longitude, latitude), df)
             result = chain.invoke({"question": chat_state.message, "recommendations": rec})  
         elif json_format(response)["recommendation_type"] == "Attribute-based":
-            chain = RunnablePassthrough.assign(chat_history=load_memory) | recommendation_sql_prompt_template | llm
+            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm
             sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
             sql_chain = sql_prompt | llm
-            output = sql_chain.invoke({"question": chat_state.message})
+            output = sql_chain.invoke({"question": chat_state.message})            
             rec = sql_based_recommendation(output, df)
             result = chain.invoke({"question": chat_state.message, "recommendations": rec, "search_info": output.content})  
         else: 
@@ -89,7 +92,7 @@ def get_hw_response(
     elif response_type == "Item Detail Search":
         # SQL 문으로 검색 가능하도록 
 
-        chain = RunnablePassthrough.assign(chat_history=load_memory) | item_search_prompt_template | llm
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | item_search_prompt_template | llm
         item_info = df.loc[df["MCT_NM"] == str(chat_state.message)].reset_index(drop=True)
         print("item_info:", item_info)
         result = chain.invoke({
@@ -101,10 +104,5 @@ def get_hw_response(
             })
     else: 
         pass 
-
-    # 메모리에 질문과 답변 추가
-    # memory.save_context(
-    #     {"input": chat_state.message},
-    #     {"output": result.content},
-    # )
-    return result.content
+    response = {"answer": result.content}
+    return response

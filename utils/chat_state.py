@@ -30,10 +30,10 @@ from utils.type_utils import (
     JSONishDict,
     OperationMode,
     PairwiseChatHistory,
-    Props,
-    MemoryMode
+    Props
 )
 from langchain_core.documents import Document
+from langchain.memory import ConversationBufferMemory
 
 logger = get_logger()
 
@@ -86,7 +86,7 @@ class ChatState:
         access_role_by_user_id_by_coll: dict[str, dict[str, AccessRole]] | None = None,
         access_code_by_coll_by_user_id: dict[str, dict[str, str]] | None = None,
         uploaded_docs: list[Document] | None = None,
-        memory: MemoryMode | None = None,
+        memory = ConversationBufferMemory(return_messages=True, memory_key="chat_history"),
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
     ) -> None: 
@@ -107,7 +107,7 @@ class ChatState:
         self._access_role_by_user_id_by_coll = access_role_by_user_id_by_coll or {}
         self._access_code_by_coll_by_user_id = access_code_by_coll_by_user_id or {}
         self.uploaded_docs = uploaded_docs or []
-        self.memory = memory or []
+        self.memory = memory
 
     # @property
     # def collection_name(self) -> str:
