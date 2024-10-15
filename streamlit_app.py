@@ -96,7 +96,7 @@ def open_ai_chat(eng_flag=False):
 
     if prompt := temp_prompt:
         # Parse the query or get the next scheduled query, if any
-        parsed_query = parse_query(prompt, predetermined_chat_mode=ChatMode.JUST_CHAT_COMMAND_ID)
+        parsed_query = parse_query(prompt, predetermined_chat_mode=ChatMode.CHAT_HW_ID)
         chat_state.update(parsed_query=parsed_query)
 
         ss.messages.append({"role": "user", "content": prompt})

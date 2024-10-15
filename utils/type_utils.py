@@ -24,6 +24,7 @@ OperationMode = Enum("OperationMode", "CONSOLE STREAMLIT FASTAPI")
 
 class ChatMode(Enum):
     NONE_COMMAND_ID = -1
+    CHAT_HW_ID=1    
     JUST_CHAT_COMMAND_ID = 6
     JUST_CHAT_GREETING_ID = 7
 
