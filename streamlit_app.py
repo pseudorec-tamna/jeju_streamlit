@@ -22,6 +22,8 @@ from agents.dbmanager import (
 from utils.type_utils import (
     ChatMode
 )
+from utils.lang_utils import pairwise_chat_history_to_msg_list
+
 from utils.streamlit.helpers import (
     mode_options,
     age_options,
@@ -135,7 +137,7 @@ def open_ai_chat(eng_flag=False):
 
             # Add the response to the chat history
             chat_state.chat_history.append((prompt, answer))
-
+            # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
             message_placeholder.markdown(answer)
         ss.messages.append({"role": "assistant", "content": answer})
         # 페이지 새로고침
@@ -155,8 +157,8 @@ def user_id_setting():
         chat_state.user_id = None
     else:
         chat_state.user_id = user_id
-        chat_state.chat_history.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
-        chat_state.chat_history_all.append(("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+"."))
+        # chat_state.chat_history.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
+        # chat_state.chat_history_all.append(("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+"."))
 
 def age():
     # 세션 상태 초기화
@@ -442,11 +444,10 @@ def main():
             full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id else ss.greeting_message
 
             # 채팅 히스토리에 새 메시지 추가
-            if full_message not in (msg for msg, _ in chat_state.chat_history):
+            if full_message not in (msg for _, msg in chat_state.chat_history):
                 chat_state.chat_history.append(("", full_message))
                 chat_state.chat_history_all.append(("", full_message))
                 chat_state.sources_history.append(None)
-
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat()
