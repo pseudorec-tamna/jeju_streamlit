@@ -153,12 +153,21 @@ def user_id_setting():
     # 양쪽 공백 제거
     user_id = user_id.strip()
 
-    if user_id == "":
-        chat_state.user_id = None
-    else:
-        chat_state.user_id = user_id
-        # chat_state.chat_history.append(("앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+".", ""))
-        # chat_state.chat_history_all.append(("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 "+user_id+"."))
+    # Check if the user ID has changed
+    if user_id != chat_state.user_id:
+        if user_id == "":
+            chat_state.user_id = None
+        else:
+            # Update user_id in chat_state
+            chat_state.user_id = user_id
+
+            # Append chat history when user_id changes
+            chat_state.chat_history.append(
+                ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + user_id + ".")
+            )
+            chat_state.chat_history_all.append(
+                ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + user_id + ".")
+            )
 
 def age():
     # 세션 상태 초기화
@@ -279,7 +288,6 @@ def price():
         )
 
     # st.write(f"선택된 가격대: ₩{price_range[0]} ~ ₩{price_range[1]}")
-        
 
 def ref_dropdown():
     # Default mode
@@ -426,8 +434,7 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat(eng_flag=True)
-
-
+    
         else:
             title_header(logo, "")
             st.title("탐라는 맛 AI와 함께하는 미식 여행에 오신 것을 환영합니다!")
@@ -451,8 +458,6 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat()
-
-
 
 
 if __name__ == '__main__':
