@@ -52,6 +52,7 @@ def get_hw_response(chat_state: ChatState):
 
     response = sub_task_detection(chat_state.message)
     response_type = json_format(response)["response_type"]
+    print("response_type:",response_type)
 
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm

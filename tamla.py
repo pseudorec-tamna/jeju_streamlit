@@ -11,6 +11,7 @@ from utils.prompts import (
 from components.llm import get_prompt_llm_chain
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from agents.greeting_quick import get_greeting_chat_chain
+from agents.question_quick import get_question_chat_chain
 from agents.hyeonwoo import get_hw_response
 from utils.type_utils import ChatMode
 from langchain.memory import ConversationBufferWindowMemory
@@ -49,6 +50,8 @@ def get_bot_response(
         return get_greeting_chat_chain(chat_state)
     elif chat_mode_val == ChatMode.CHAT_HW_ID.value:
         return get_hw_response(chat_state)
+    elif chat_mode_val == ChatMode.CHAT_QUESTION_ID.value:
+        return get_question_chat_chain(chat_state)
     else:
         # Should never happen
         raise ValueError(f"Invalid chat mode: {chat_state.chat_mode}")
