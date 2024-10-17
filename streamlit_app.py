@@ -82,6 +82,7 @@ if "chat_state" not in ss:
 chat_state: ChatState = ss.chat_state
 
 def open_ai_chat(eng_flag=False):
+    # 채팅창 생성
     if "messages" not in ss:
         ss.messages = []
 
@@ -90,9 +91,15 @@ def open_ai_chat(eng_flag=False):
         with st.chat_message(message["role"], avatar=message.get("avatar")):
             st.markdown(message["content"])
 
+    # 질문지 생성 
+    with st.container():
+        clicked_sample_query = questions_recommending()
+
     # Chat 입력창 설명 
     if eng_flag:
         temp_prompt = st.chat_input("How can I assist you?")
+    elif clicked_sample_query:
+        temp_prompt = clicked_sample_query
     else:
         temp_prompt = st.chat_input("무엇을 도와드릴까요?")
 
@@ -163,10 +170,10 @@ def user_id_setting():
 
             # Append chat history when user_id changes
             chat_state.chat_history.append(
-                ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + user_id + ".")
+                ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + chat_state.user_id + ".")
             )
             chat_state.chat_history_all.append(
-                ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + user_id + ".")
+                ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + chat_state.user_id + ".")
             )
 
 def age():
@@ -332,6 +339,12 @@ def side_bar():
 
         # food_selection
         food_selection()
+
+        # Clear chat history
+        def clear_chat_history():
+            ss.messages = []
+        st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
+
     
 def title_header(logo, title):
     # 이미지와 제목을 포함한 컨테이너 생성
@@ -376,6 +389,47 @@ def llm_method_button(eng_flag):
     # chat_input_text = limit_num_characters(chat_input_text + coll_name_as_shown, 35) + "/"
     # full_query = st.chat_input(chat_input_text)    
 
+# def questions_recommending():
+#     # 질문지 생성
+#     parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
+#     chat_state.update(parsed_query=parsed_query)
+#     question_lists = get_bot_response(chat_state)
+
+#     # Show sample queries
+#     clicked_sample_query = None
+#     for _ in range(5):
+#         st.write("")
+#     for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), question_lists)):
+#         with btn_col:
+#             if st.button(sample_query, key=f"query{i}"):
+#                 clicked_sample_query = sample_query
+#     return clicked_sample_query  # 아무 버튼도 클릭되지 않았을 경우
+
+
+def questions_recommending():
+    if 'clicked_query' not in ss:
+        ss.clicked_query = None
+
+    # 질문지 생성
+    parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
+    chat_state.update(parsed_query=parsed_query)
+    question_lists = get_bot_response(chat_state)
+
+    # Show sample queries
+    for _ in range(5):
+        st.write("")
+
+    def click_button(query):
+        ss.clicked_query = query
+
+    for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), question_lists)):
+        with btn_col:
+            st.button(sample_query, key=f"query{i}", on_click=click_button, args=(sample_query,))
+
+    clicked_sample_query = ss.clicked_query
+    ss.clicked_query = None  # Reset for next use
+    return clicked_sample_query
+
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
@@ -417,20 +471,19 @@ def main():
             st.markdown(GREETING_MESSAGE_ENG)
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
+                chat_state.flag = "영어로"                 
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
-                chat_state.flag = "영어로" 
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
 
-            # 사용자 ID에 따른 전체 메시지 생성
-            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id else ss.greeting_message
+            # 사용자 ID를 포함한 전체 메시지 생성
+            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id and chat_state.user_id.strip() else ss.greeting_message
 
             # 채팅 히스토리에 새 메시지 추가
-            if full_message not in [msg for msg, _ in chat_state.chat_history]:
+            if full_message not in [msg for _, msg in chat_state.chat_history]:
                 chat_state.chat_history.append(("", full_message))
                 chat_state.chat_history_all.append(("", full_message))
                 chat_state.sources_history.append(None)
-
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat(eng_flag=True)
@@ -442,13 +495,13 @@ def main():
             st.markdown(GREETING_MESSAGE_KOR)
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
-                parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.flag = ""
+                parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
-
+                
             # 사용자 ID를 포함한 전체 메시지 생성
-            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id else ss.greeting_message
+            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id and chat_state.user_id.strip() else ss.greeting_message
 
             # 채팅 히스토리에 새 메시지 추가
             if full_message not in (msg for _, msg in chat_state.chat_history):
@@ -458,6 +511,7 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat()
+
 
 
 if __name__ == '__main__':

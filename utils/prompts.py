@@ -77,7 +77,8 @@ chat_greet_template = """
         - 제주도의 지역 음식인 '흑돼지', '전복죽', '고등어회', '고기국수', '딱새우', '성게 미역국', '오메기떡', '갈치조림' 등을 우선적으로 제안하되, 적절하지 않다면 일반적인 음식을 제안하세요.
         
         현재 기온({temperature}°C)과 날씨 상태({weather_condition})를 언급하세요.
-        메시지를 재미있고 상황에 맞게 개인화해주세요.
+        메시지를 재미있고 상황에 맞게 개인화해주세요. 
+        현재 기온 및 날씨 정보를 모를 때에는 기온 및 날씨 정보 언급 없이 제주도 지역의 음식을 제안하세요.
         
         예시 형식:
         1.
@@ -108,6 +109,39 @@ CHAT_GREETING_PROMPT = ChatPromptTemplate.from_messages(
     ]
 )
 
+chat_question_template = """
+이전 대화 내용을 기반으로 물어볼만한 제주도 맛집 관련 질문을 2개 생성해주세요.
+질문은 최대한 짧고 간단하게 작성하세요.
+
+당신이 할 수 있는 기능은 아래와 같습니다:
+- 근처 맛집 추천 : 사용자의 현재 위치 혹은 원하는 장소에서 가장 가까운 맛집을 추천해줍니다.(주소를 최대한 자세하게 알려주세요.) 
+- 다음에 갈 장소 추천 : 사용자가 마지막에 들린 장소로부터 다음으로 가장 많이 방문하는 맛집, 카페, 술집, 관광지등을 추천해줍니다.
+- 속성에 기반한 추천 : 업종, 평균이용금액, 현지인 이용 비중 등을 요청해주시면 이를 고려해서 맛집을 추천해줍니다. 
+
+반드시 다음 형식으로 정확히 2개의 질문을 생성하세요:
+[
+"질문1",
+"질문2"
+]
+
+질문지는 아래 예시를 참고해서 생성하세요. 질문은 최대한 짧고 간단하게 작성하세요.
+
+질문지 예시: 
+- 애월에서 요새 뜨는 카페가 어디야?
+- 제주도에서 요새 제일 핫한 메뉴가 뭐야?
+- 중문 숙성도처럼 숙성 고기 파는데 웨이팅이 적은 식당 있을까?
+- 아침에 우진해장국 오픈런 할건데 근처에 후식으로 디저트 먹으러 갈 카페를 알려줘.
+- 제주시 한림읍에 있는 카페 중 30대 이용 비중이 가장 높은 곳은 어디인가요?
+- 이것이국밥이다 서귀포점 근처 맛집을 추천해주세요.
+"""
+
+CHAT_QUESTION_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", chat_question_template),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "이전 대화를 바탕으로 제주도 맛집 관련 질문 2개를 생성해주세요."),
+    ]
+)
 
 qa_template_summarize_kb = """You are a helpful Assistant AI who has been equipped with your own special knowledge base. In response to the user's query you have retrieved the most relevant parts of your knowledge base you could find:
 

@@ -8,7 +8,7 @@ from utils.prepare import MODEL_NAME, TEMPERATURE
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain.memory import ConversationBufferMemory
 from typing import ClassVar
-from langchain.memory.chat_memory import InMemoryChatMessageHistory
+# from langchain.memory.chat_memory import InMemoryChatMessageHistory
 
 JSONish = str | int | float | dict[str, "JSONish"] | list["JSONish"]
 JSONishDict = dict[str, JSONish]
@@ -25,6 +25,7 @@ OperationMode = Enum("OperationMode", "CONSOLE STREAMLIT FASTAPI")
 class ChatMode(Enum):
     NONE_COMMAND_ID = -1
     CHAT_HW_ID=1    
+    CHAT_QUESTION_ID=2
     JUST_CHAT_COMMAND_ID = 6
     JUST_CHAT_GREETING_ID = 7
 

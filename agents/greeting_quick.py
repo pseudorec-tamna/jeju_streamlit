@@ -9,7 +9,8 @@ import requests
 import json  
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import LLMChain
-
+from utils.lang_utils import pairwise_chat_history_to_msg_list
+import time
 
 def date_time():
     # 현재 시간
@@ -23,30 +24,48 @@ def date_time():
     one_hour_ago_time_str = one_hour_ago.strftime("%H00")
     return one_hour_ago_str, one_hour_ago_time_str
 
-def jeju_info(serviceKey, one_hour_ago_str, one_hour_ago_time_str):
-    # parameters
+def jeju_info_with_retry(serviceKey, one_hour_ago_str, one_hour_ago_time_str, retries=2, delay=3):
+    """
+    제주도 날씨 API 호출을 시도하고 실패 시 재시도하는 함수.
+    retries: 재시도 횟수
+    delay: 재시도 전 대기 시간 (초)
+    """
     base_date = one_hour_ago_str
     base_time = one_hour_ago_time_str
     nx = '53'
     ny = '38' 
     url = f"http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst?serviceKey={serviceKey}&numOfRows=60&pageNo=1&dataType=json&base_date={base_date}&base_time={base_time}&nx={nx}&ny={ny}"
-    
-    response = requests.get(url, verify=False)
-    res = json.loads(response.text)
-    
-    informations = dict()
-    for items in res['response']['body']['items']['item'] :
-        cate = items['category']
-        fcstTime = items['fcstTime']
-        fcstValue = items['fcstValue']
-        temp = dict()
-        temp[cate] = fcstValue
-        
-        if fcstTime not in informations.keys() :
-            informations[fcstTime] = dict()
-    
-        informations[fcstTime][cate] = fcstValue
-    return informations 
+
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, verify=False)
+
+            # 상태 코드 확인
+            if response.status_code != 200:
+                print(f"API 호출 실패. 상태 코드: {response.status_code}")
+                continue
+
+            res = response.json()
+            # 응답에서 데이터를 추출
+            informations = dict()
+            for items in res['response']['body']['items']['item']:
+                cate = items['category']
+                fcstTime = items['fcstTime']
+                fcstValue = items['fcstValue']
+                if fcstTime not in informations.keys():
+                    informations[fcstTime] = dict()
+                informations[fcstTime][cate] = fcstValue
+            return informations
+
+        except json.JSONDecodeError:
+            print(f"JSON 파싱 실패. 응답: {response.text}")
+            continue
+
+        except requests.exceptions.RequestException as e:
+            print(f"API 호출 실패: {e}. 재시도 중... ({attempt + 1}/{retries})")
+            if attempt < retries - 1:
+                time.sleep(delay)  # 재시도 전 대기
+
 
 def deg_to_dir(deg) :
     deg_code = {0 : 'N', 360 : 'N', 180 : 'S', 270 : 'W', 90 : 'E', 22.5 :'NNE',
@@ -117,16 +136,20 @@ def parse_weather_data(informations, base_date, deg_to_dir):
 
         # 완성된 날씨 정보를 리스트에 추가
         weather_data.append(weather_dict)
-        break  # break는 테스트 목적으로 추가한 것 같으니, 필요 시 제거 가능
+        break  # 첫 부분까지만 호출 
 
     return weather_data
 
 def jeju_weather_dict():
     # 제주도 최근 날씨 정보 얻기 
     one_hour_ago_str, one_hour_ago_time_str = date_time()
-    informations = jeju_info(WEATHER_KEY, one_hour_ago_str, one_hour_ago_time_str)
+    informations = jeju_info_with_retry(WEATHER_KEY, one_hour_ago_str, one_hour_ago_time_str)
+
+    if informations is None:
+        return {"date": "데이터 없음", "time": "데이터 없음", "temperature": None, "sky_condition": "알 수 없음"}
+
     weather_dict = parse_weather_data(informations, one_hour_ago_str, deg_to_dir)[0]
-    return weather_dict 
+    return weather_dict    
 
 def get_greeting_chat_chain(
     chat_state: ChatState,
@@ -152,10 +175,10 @@ def get_greeting_chat_chain(
     answer = chain.run({
         "date": weather_dict['date'],
         "time": weather_dict['time'],
-        "temperature": float(weather_dict['temperature'][:-1]),
+        "temperature": float(weather_dict['temperature'][:-1]) if weather_dict['temperature'] else "모름",
         "weather_condition": weather_dict['sky_condition'],
         "flag": flag,
-        "chat_history": chat_state.chat_history,
+        "chat_history": pairwise_chat_history_to_msg_list([]),
         "message": message,
     })
 
