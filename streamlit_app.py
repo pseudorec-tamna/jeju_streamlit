@@ -145,7 +145,7 @@ def open_ai_chat(eng_flag=False):
             # Add the response to the chat history
             chat_state.chat_history.append((prompt, answer))
             # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-            message_placeholder.markdown(answer)
+            message_placeholder.markdown(fix_markdown(answer))
         ss.messages.append({"role": "assistant", "content": answer})
         # 페이지 새로고침
         st.rerun()
