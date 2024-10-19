@@ -27,12 +27,12 @@ DEFAULT_LOGGER_NAME = os.getenv("DEFAULT_LOGGER_NAME", "ddg")
 def get_logger(logger_name: str = DEFAULT_LOGGER_NAME):
     return logging.getLogger(logger_name)
 
-# # Set up the environment variables
-DEFAULT_OPENAI_API_KEY = os.getenv("DEFAULT_OPENAI_API_KEY", "")
-# IS_AZURE = bool(os.getenv("OPENAI_API_BASE") or os.getenv("AZURE_OPENAI_API_KEY"))
-# EMBEDDINGS_DEPLOYMENT_NAME = os.getenv("EMBEDDINGS_DEPLOYMENT_NAME")
-# CHAT_DEPLOYMENT_NAME = os.getenv("CHAT_DEPLOYMENT_NAME")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# # # Set up the environment variables
+DEFAULT_OPENAI_API_KEY = "AIzaSyDwwPQj1u0dyNi2Cw5pYQGHL82f4vyxmas"
+# # IS_AZURE = bool(os.getenv("OPENAI_API_BASE") or os.getenv("AZURE_OPENAI_API_KEY"))
+# # EMBEDDINGS_DEPLOYMENT_NAME = os.getenv("EMBEDDINGS_DEPLOYMENT_NAME")
+# # CHAT_DEPLOYMENT_NAME = os.getenv("CHAT_DEPLOYMENT_NAME")
+GEMINI_API_KEY = "AIzaSyDwwPQj1u0dyNi2Cw5pYQGHL82f4vyxmas"
 
 # WEATHER KEY
 WEATHER_KEY = os.getenv("WEATHER_SECRET_KEY", "")
@@ -50,10 +50,10 @@ WEATHER_KEY = os.getenv("WEATHER_SECRET_KEY", "")
 # # The following variable is only used if USE_CHROMA_VIA_HTTP is False
 # VECTORDB_DIR = os.getenv("VECTORDB_DIR", "chroma/")
 
-MODEL_NAME = os.getenv("MODEL_NAME", "gemini-1.5-flash")  # rename to DEFAULT_MODEL?
+MODEL_NAME = "gemini-1.5-flash"  # rename to DEFAULT_MODEL?
 # CONTEXT_LENGTH = int(os.getenv("CONTEXT_LENGTH", 16000))  # it's actually more like max
 # # size of what we think we can feed to the model so that it doesn't get overwhelmed
-TEMPERATURE = float(os.getenv("TEMPERATURE", 0.3))
+TEMPERATURE = float(os.getenv("TEMPERATURE", 0.1))
 
 # ALLOWED_MODELS = os.getenv("ALLOWED_MODELS", MODEL_NAME).split(",")
 # ALLOWED_MODELS = [model.strip() for model in ALLOWED_MODELS]

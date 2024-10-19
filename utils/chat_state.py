@@ -87,6 +87,12 @@ class ChatState:
         access_code_by_coll_by_user_id: dict[str, dict[str, str]] | None = None,
         uploaded_docs: list[Document] | None = None,
         memory = ConversationBufferMemory(return_messages=True, memory_key="chat_history"),
+        multi_turn_amount: int = 0,
+        recommend_term:bool = False,
+        info_location: str = "",
+        info_menuplace: list[str] =[''],
+        info_keyword: list[str] = [''],
+
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
     ) -> None: 
@@ -107,6 +113,11 @@ class ChatState:
         self._access_role_by_user_id_by_coll = access_role_by_user_id_by_coll or {}
         self._access_code_by_coll_by_user_id = access_code_by_coll_by_user_id or {}
         self.uploaded_docs = uploaded_docs or []
+        self.multi_turn_amount = multi_turn_amount
+        self.info_location = info_location
+        self.info_menuplace = info_menuplace
+        self.info_keyword = info_keyword
+        self.recommend_term = recommend_term
         self.memory = memory
 
     # @property

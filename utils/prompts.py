@@ -482,15 +482,17 @@ chat_prompt_template = ChatPromptTemplate.from_messages([
     ("human", "{question}"),
 ])
 
-recommendation_template_chat = '''당신은 탐라는 맛의 탐나 모델입니다. 
-사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
-아래의 주어진 <추천 결과> 및 <거리 정보>를 참고해서 질문의 답변을 도와주세요. 
-참고로 모든 답변은 모두 한국어로 해주세요. 
-
-<추천 결과> 
+recommendation_template_chat = '''
+GOAL:
+* You are a bot for making recommendation reponse to the user named Tamna
+* If someone asks who you are, introduce your self as 탐나 who is a 탐나는 맛 team's recommendation bot for Jeju island visitors.
+* You have to make answer the questions with referring the given information '<recommendation info>'
+* Answer should be in Korean.
+* Never make answer with 
+<recommendation info> 
 {recommendations}
 
-<답변 포맷> 
+<output format> 
 🎬 가게명: ㅇㅇㅇ
 🎥 업종: ㅇㅇㅇ
 📄 대표 메뉴: ㅇㅇㅇ
@@ -552,3 +554,72 @@ item_search_prompt_template = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{question}"),
 ])
+
+explanation_template_chat = '''
+    * You respond to follow-up questions about the information already provided.
+    * Based on previous conversation history, explain the reason for the recommendation and assist in offering other suggestions if needed.
+    * After providing an explanation, generate a response asking if another recommendation is needed.
+    * Please note that all responses should be in Korean.
+'''
+
+explanation_template = ChatPromptTemplate.from_messages([
+    ("system", explanation_template_chat),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{question}"),
+])
+
+
+# recommendation_keyword_template_chat = '''
+
+
+# <검색 정보>
+# {search_info}
+
+# <추천 결과> 
+# {recommendations}
+
+# 답변의 포맷은 아래와 같습니다. 
+# 🎬 가게명: ㅇㅇㅇ
+# 🎥 업종: ㅇㅇㅇ
+# 📄 대표 메뉴: ㅇㅇㅇ
+# 🕴️ 주소: ㅇㅇㅇ
+# 📄 영업시간: ㅇㅇㅇ
+# 📄 예약 유무: ㅇㅇㅇ
+# 📄 주차 유무: ㅇㅇㅇ
+# 📄 추천 이유: ㅇㅇㅇ
+# '''
+
+# recommendation_keyword_prompt_template = ChatPromptTemplate.from_messages([
+#     ("system", recommendation_sql_template_chat),
+#     MessagesPlaceholder(variable_name="chat_history"),
+#     ("human", "{question}"),
+# ])
+
+multi_turn_chat = '''
+GOAL:
+* You need to collect additional information to make a recommendation based on the given data.
+* Generate a response that asks whether the user wants a recommendation based on the desired location(location) or menu/place (menu_place), according to the previous conversation.
+* The response should be similar in tone to the previous dialogue and must be written in Korean.
+
+
+PROCEDURE:
+* Refer to the following information that user has given.
+* Think what information is needed to get for better recommendation.
+* Then, generate the answer for getting the info from user.
+
+LOCATION INFO:
+{location}
+
+MENU OR PLACE INFO:
+{menuplace}
+
+USER's QUESTION:
+{question}
+
+OUTPUT:
+'''
+
+multi_turn_template = ChatPromptTemplate.from_messages([
+    ("system", multi_turn_chat),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{question}")])
