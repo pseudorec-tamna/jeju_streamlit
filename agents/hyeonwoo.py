@@ -26,6 +26,8 @@ from recommendation.sql_based import extract_sql_query, sql_based_recommendation
 from recommendation.prompt import template_sql_prompt
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
+import streamlit as st 
+
 
 df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
 df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
@@ -49,7 +51,7 @@ def get_hw_response(chat_state: ChatState):
         model=chat_state.bot_settings.llm_model_name,
         google_api_key=chat_state.google_api_key
     )
-
+    
     response = sub_task_detection(chat_state.message)
     response_type = json_format(response)["response_type"]
     print("response_type:",response_type)
@@ -63,11 +65,13 @@ def get_hw_response(chat_state: ChatState):
         if json_format(response)["recommendation_type"] == "Distance-based":
             chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm
             coord = get_coordinates_by_question(chat_state.message)
+            st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
             print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
 
-            from IPython.display import IFrame
+            # from IPython.display import IFrame
             latitude, longitude = coord  # coord에서 위도와 경도 추출
-            display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
+            # display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
+            st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
             
             while True: 
                 response = requests.get('http://127.0.0.1:5000/get_coordinates')
@@ -89,7 +93,7 @@ def get_hw_response(chat_state: ChatState):
             result = chain.invoke({"question": chat_state.message, "recommendations": rec, "search_info": output.content})  
         else: 
             pass 
-              
+    
     elif response_type == "Item Detail Search":
         # SQL 문으로 검색 가능하도록 
 

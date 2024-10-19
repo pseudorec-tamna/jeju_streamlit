@@ -9,7 +9,7 @@ longitude = None
 
 @app.route('/')
 def index():
-
+    # 지도 및 검색 UI를 반환하는 HTML
     return '''
     <!DOCTYPE html>
     <html>
@@ -317,3 +317,5 @@ def get_coordinates():
 
 if __name__ == '__main__':
     app.run(port=5000)
+
+
