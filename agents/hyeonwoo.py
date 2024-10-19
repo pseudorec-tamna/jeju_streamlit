@@ -27,15 +27,27 @@ from recommendation.prompt import template_sql_prompt
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 import streamlit as st 
+from utils.client import MysqlClient
 
 
-df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
-df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
-df = df.reset_index(drop=True)
+# df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
+# df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
+# df = df.reset_index(drop=True)
+
+# database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
+# meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
+# df = df.merge(meta_info[["MCT_NM", "MCT_TYPE"]], how="left", on="MCT_NM")
 
 database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
 meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
-df = df.merge(meta_info[["MCT_NM", "MCT_TYPE"]], how="left", on="MCT_NM")
+
+mysql = MysqlClient()
+query = f"select * from tamdb.detailed_info_1"
+mysql.cursor.execute(query)
+rows = mysql.cursor.fetchall()
+columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
+df = pd.DataFrame(rows, columns=columns)
+df = df.merge(meta_info[["ADDR", "MCT_TYPE"]], how="left", on="ADDR")
 
 def load_memory(input, chat_state):
     # print("chat_state:", chat_state.memory)
