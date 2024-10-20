@@ -87,6 +87,12 @@ def index():
             var ps = new kakao.maps.services.Places();
             var infowindow = new kakao.maps.InfoWindow({zIndex:1});
 
+            // 제주도 경계 설정 (서귀포와 제주시 좌표)
+            var bounds = new kakao.maps.LatLngBounds(
+                new kakao.maps.LatLng(33.20084, 126.15684),  // 남서쪽
+                new kakao.maps.LatLng(33.56034, 126.97832)   // 북동쪽
+            );
+
             searchPlaces();
 
             function searchPlaces() {
@@ -95,7 +101,8 @@ def index():
                     alert('키워드를 입력해주세요!');
                     return false;
                 }
-                ps.keywordSearch(keyword, placesSearchCB); 
+                // 제주도 범위 내에서 키워드 검색
+                ps.keywordSearch(keyword, placesSearchCB, { bounds: bounds });
             }
 
             function placesSearchCB(data, status, pagination) {
