@@ -24,6 +24,10 @@ import requests, time
 import subprocess
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
 from recommendation.prompt import template_sql_prompt
+
+from recommendation.context_based import make_transition_matrix, context_based_recommendation, get_additional_info_visit_hist
+from recommendation.content_based import get_summary, encode_poi_attributes, load_collection_db, content_based_recommendation
+
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 import streamlit as st 
@@ -48,6 +52,35 @@ rows = mysql.cursor.fetchall()
 columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
 df = pd.DataFrame(rows, columns=columns)
 df = df.merge(meta_info[["ADDR", "MCT_TYPE"]], how="left", on="ADDR")
+
+
+path_visit_info = './data/tn_visit_area_info_h.csv'
+path_visit_additional_info = './data/poi_df.csv'
+path_transition_matrix = './data/transition_matrix.csv'
+
+init = False 
+if init: # JEJU_MCT_DATA에 없는 방문이력 점포의 추가 정보 크롤링 (사전 진행))
+    poi_df = get_additional_info_visit_hist(path_visit_info, path_visit_additional_info)
+else:
+    poi_df = pd.read_csv(path_visit_additional_info).iloc[:,1:]
+
+hist_df = pd.read_csv(path_visit_info)
+hist_df = hist_df[(hist_df.X_COORD > 126.117692) & (hist_df.X_COORD < 127.071811) & (hist_df.Y_COORD > 33.062919) & (hist_df.Y_COORD < 33.599581)]
+
+poi_df = poi_df.rename(columns={'data-id':'id'})
+removal_titles = ['호텔','리조트','아파트','빌라','독채','렌터카','학교','집','전원주택','편의점']
+poi_df = poi_df[~poi_df.VISIT_AREA_NM.str.contains('|'.join(removal_titles))]
+poi_df = poi_df[poi_df.id != 'no']
+
+hist_df = hist_df[['TRAVEL_ID','VISIT_ORDER','VISIT_START_YMD','VISIT_AREA_NM','ROAD_NM_ADDR','LOTNO_ADDR']].merge(poi_df, on=['VISIT_AREA_NM','ROAD_NM_ADDR','LOTNO_ADDR'])
+hist_df = hist_df[['TRAVEL_ID','id','VISIT_START_YMD','VISIT_ORDER','VISIT_AREA_NM']]
+hist_df = hist_df[hist_df.id.isin(df.id.unique())] # 신한카드 관련 id만 활용
+
+init = True
+if init:
+    transition_matrix_df = make_transition_matrix(hist_df, poi_df, df,path_transition_matrix)
+else:
+    transition_matrix_df = pd.read_csv(path_transition_matrix)
 
 def load_memory(input, chat_state):
     # print("chat_state:", chat_state.memory)
@@ -103,8 +136,24 @@ def get_hw_response(chat_state: ChatState):
             output = sql_chain.invoke({"question": chat_state.message})            
             rec = sql_based_recommendation(output, df)
             result = chain.invoke({"question": chat_state.message, "recommendations": rec, "search_info": output.content})  
-        else: 
-            pass 
+        elif json_format(response)["recommendation_type"] == "Context-based":
+            chain = RunnablePassthrough.assign(chat_history=load_memory) | recommendation_sql_prompt_template | llm
+            # 기준이 되는 가맹점이 있어야함
+            tmp_id = '1648347549'
+            rec = context_based_recommendation(tmp_id, transition_matrix_df, shinhan_ids, other_ids)
+            result = chain.invoke({"question": question+tmp_id, "recommendations": rec})  
+        else: # Content-based
+            chain = RunnablePassthrough.assign(chat_history=load_memory) | recommendation_sql_prompt_template | llm
+
+            df_summary = get_summary(df)
+            db_init = False
+            if db_init == True:
+                # 약 한시간 걸림
+                encode_poi_attributes(df_summary)
+
+            collection = load_collection_db()
+            rec = content_based_recommendation(question, collection, df_summary)
+            result = chain.invoke({"question": question, "recommendations": rec})  
     
     elif response_type == "Item Detail Search":
         # SQL 문으로 검색 가능하도록 
