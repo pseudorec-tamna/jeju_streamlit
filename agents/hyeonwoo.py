@@ -60,12 +60,18 @@ df = pd.DataFrame(rows, columns=columns)
 df['ADDR_detail'] = df['ADDR'].map(lambda x: ' '.join(x.split(' ')[1:3]))
 # df = df.merge(meta_info[["MCT_NM", "ADDR", "MCT_TYPE"]], how="left", on=["MCT_NM","ADDR"])
 
+
 query = f"select * from tamdb.attraction_info"
 mysql.cursor.execute(query)
 rows = mysql.cursor.fetchall()
 columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
 df_refer = pd.DataFrame(rows, columns=columns)
 
+path_visit_additional_info = './data/poi_df.csv' # 방문이력 데이터에 대한 id 크롤링 따로 진행
+path_transition_matrix = './data/transition_matrix.csv'
+
+transition_matrix_df = pd.read_csv(path_transition_matrix)
+visit_poi_df = pd.read_csv(path_visit_additional_info)
 
 documents = []
 for row in df.iterrows():
@@ -165,12 +171,8 @@ def format_docs(docs):
 # df['title'].replace('', np.nan, inplace=True)
 # df= df.dropna(subset='title')
 
-path_visit_additional_info = './data/poi_df.csv' # 방문이력 데이터에 대한 id 크롤링 따로 진행
-path_transition_matrix = './data/transition_matrix.csv'
 
 
-transition_matrix_df = pd.read_csv(path_transition_matrix)
-visit_poi_df = pd.read_csv(path_visit_additional_info)
 
 # Embedding 모델 불러오기 - 개별 환경에 맞는 device로 설정
 model_name = "upskyy/bge-m3-Korean"
@@ -232,7 +234,7 @@ def get_hw_response(chat_state: ChatState):
     #     result = chain.invoke({"question": chat_state.message})
         
     elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
-
+        rec = None # 변수 초기화
         print(f"추천 타입:{json_format(response)["recommendation_type"]}")
         print(f"추천 요소:{json_format(response)["recommendation_factors"]}")
         menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
@@ -318,10 +320,16 @@ def get_hw_response(chat_state: ChatState):
         else: 
             pass 
         
+        # 수정 필요 사항
+        # 추천 기능별 rec 파일 규격 통일
+        # docs 에 id 값 추가하고 rec 규격에 맞게 rec 파일 추출하기
+        # next_rec을 결과로 출력할 수 있게 프롬프트 또는 response return 값 수정(?)
+        # - TOP1 결과에 대해서만 제공, next_rec 값이 None인 경우도 있음 (방문이력X)
         next_rec = None
-        for id_t in rec['id'].values:
-            if id_t in transition_matrix_df.index:
-                next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
+        id_t = rec.iloc[0]['id']
+        if id_t in transition_matrix_df.index:
+            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
+        
         
     # elif response_type == "Item Detail Search":
     #     # SQL 문으로 검색 가능하도록 
