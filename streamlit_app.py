@@ -11,6 +11,7 @@ from utils.prepare import (
 )
 from utils.query_parsing import parse_query
 from components.llm import CallbackHandlerDDGStreamlit
+from agents.final_pretty import df_filter, display_store_info
 from utils.chat_state import ChatState
 from utils.streamlit.prepare import prepare_app
 from utils.helpers import (
@@ -27,7 +28,6 @@ from utils.type_utils import (
     ChatMode
 )
 from utils.lang_utils import pairwise_chat_history_to_msg_list
-
 from utils.streamlit.helpers import (
     mode_options,
     age_options,
@@ -286,7 +286,7 @@ def food_selection():
 
 def price():
     # Settings
-    with st.expander("가격대 설정", expanded=True):
+    with st.expander("가격대 설정", expanded=False):
         # 가격대 슬라이더
         price_range = st.slider(
             "1인 기준 가격대를 선택해주세요",
@@ -315,7 +315,7 @@ def ref_dropdown():
         st.caption(cmd_prefix_explainer)
 
 def hashtag():
-    with st.expander("식당 해시태그", expanded=True):
+    with st.expander("식당 해시태그", expanded=False):
         # 예시 해시태그 리스트
         if 'hashtags' not in ss:
             ss.hashtags = [
@@ -463,23 +463,6 @@ def llm_method_button(eng_flag):
     # chat_input_text = limit_num_characters(chat_input_text + coll_name_as_shown, 35) + "/"
     # full_query = st.chat_input(chat_input_text)    
 
-# def questions_recommending():
-#     # 질문지 생성
-#     parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
-#     chat_state.update(parsed_query=parsed_query)
-#     question_lists = get_bot_response(chat_state)
-
-#     # Show sample queries
-#     clicked_sample_query = None
-#     for _ in range(5):
-#         st.write("")
-#     for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), question_lists)):
-#         with btn_col:
-#             if st.button(sample_query, key=f"query{i}"):
-#                 clicked_sample_query = sample_query
-#     return clicked_sample_query  # 아무 버튼도 클릭되지 않았을 경우
-
-
 def questions_recommending():
     if 'clicked_query' not in ss:
         ss.clicked_query = None
@@ -504,73 +487,33 @@ def questions_recommending():
     ss.clicked_query = None  # Reset for next use
     return clicked_sample_query
 
-def load_image_from_url(url):
-    response = requests.get(url)
-    img = Image.open(BytesIO(response.content))
-    return img
+def url_setting(title, addr):    
+    id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count = df_filter(title, addr)
+    content = display_store_info(id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count)
 
-def display_image(url, width=300):
-    try:
-        img = load_image_from_url(url)
-        st.image(img, width=width, use_column_width=False)
-    except Exception as e:
-        st.error(f"이미지를 불러오는 데 실패했습니다: {e}")
+    # 이미지가 있을 경우 사진 추가 (클릭 시 새 창에서 원본 보기)
+    image_html = ""
+    if img and img.strip():
+        image_html = f"""
+            <div>
+                <a href="{id_url}" target="_blank">
+                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 600px; max-height: 130px; object-fit: cover; border-radius: 10px; margin-bottom: 10px;">
+                </a>
+            </div>
+        """
 
-def url_image_final(image_url):
-
-    if image_url:
-        # 이미지 표시를 위한 컨테이너 생성
-        image_container = st.container()
-        
-        with image_container:
-            col1, col2, col3 = st.columns([1,1,1])
-            with col2:
-                display_image(image_url, width=200)
-
-def get_page_info(url):
-    try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        title = soup.find('meta', property='og:title')['content'] if soup.find('meta', property='og:title') else 'No Title'
-        description = soup.find('meta', property='og:description')['content'] if soup.find('meta', property='og:description') else 'No Description'
-        image = soup.find('meta', property='og:image')['content'] if soup.find('meta', property='og:image') else None
-        
-        if image and not image.startswith('http'):
-            image = urljoin(url, image)
-        
-        return title, description, image
-    except Exception as e:
-        st.error(f"Error fetching page info: {e}")
-        return 'Error', 'Could not fetch page information', None
-
-def display_link_card(url):
-    title, description, image = get_page_info(url)
-    
+    # 최종 HTML을 Markdown에 적용
     st.markdown(f"""
-    <div style="border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:10px;">
-        <h3>{title}</h3>
-        <p>{description}</p>
-        <a href="{url}" target="_blank">예약 페이지로 이동</a>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if image:
-        st.image(image, use_column_width=True)
-
-def url_setting():
-    st.title("네이버 예약 링크 표시")
-    
-    url = "https://booking.naver.com/booking/6/bizes/373000"
-    
-    display_link_card(url)
-    
-    # 추가 정보나 관련 링크를 표시할 수 있습니다
-    st.markdown("### 관련 정보")
-    st.markdown("- 이 식당은 네이버 예약을 통해 예약할 수 있습니다.")
-    st.markdown("- 예약 전 영업시간과 특별 공지사항을 확인해주세요.")
-    st.markdown("- 문의사항은 식당에 직접 연락하시기 바랍니다.")
-
+        <div style="border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:10px;">
+            <div>{image_html}</div>
+            <details>
+                <summary style="cursor: pointer; font-size: 1.2em; font-weight: bold;">🍊 {title} 정보</summary>
+                <div style="padding-top: 10px;">
+                    {content}
+                </div>
+            </details>
+        </div>
+        """, unsafe_allow_html=True)
 
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
@@ -584,8 +527,9 @@ def main():
     # 세션 상태에 페이지 상태 초기화
     if 'page' not in ss:
         ss.page = 'language_select'
+
+    # url_setting("제주그때그집 노형점", "제주 제주시 노형동 1045-11번지 1층")
     
-    url_setting()
     # 언어 선택 페이지
     if ss.page == 'language_select':
         st.title("🍊 환영합니다 / Welcome!")
