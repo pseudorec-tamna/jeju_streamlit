@@ -1,6 +1,10 @@
 import os
 import streamlit as st
 from PIL import Image
+from io import BytesIO
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from utils.prepare import (
     get_logger,
     GEMINI_API_KEY
@@ -272,7 +276,6 @@ def food_selection():
         for food in food_types:
             if st.checkbox(food, key=f"food_{food}"):
                 selected_foods.append(food)
-        
         chat_state.selected_foods = selected_foods
 
         # if chat_state.selected_foods:
@@ -288,12 +291,15 @@ def price():
         price_range = st.slider(
             "1인 기준 가격대를 선택해주세요",
             min_value=5000,
-            max_value=100000,
-            value=(5000, 50000),  # Default range
+            max_value=200000,
+            value=(5000, 200000),  # Default range
             step=5000,
             format="₩%d",
         )
-
+        list_price = list(price_range)
+        if list_price[-1] == 200000:
+            list_price[-1] = 1000000
+        chat_state.price_range = list_price
     # st.write(f"선택된 가격대: ₩{price_range[0]} ~ ₩{price_range[1]}")
 
 def ref_dropdown():
@@ -307,7 +313,68 @@ def ref_dropdown():
         )
         cmd_prefix, cmd_prefix_explainer, _ = age_options[ss.default_mode]
         st.caption(cmd_prefix_explainer)
-        
+
+def hashtag():
+    with st.expander("식당 해시태그", expanded=True):
+        # 예시 해시태그 리스트
+        if 'hashtags' not in ss:
+            ss.hashtags = [
+                "#분위기맛집 🌟",  # 분위기가 좋은 맛집을 강조
+                "#존맛 😋",       # 맛의 탁월함을 강조
+                "#서비스굿굿 👍",  # 서비스의 품질을 강조
+                "#가성비갑 💸",    # 가격 대비 만족도를 강조
+                "#푸짐한음식량 🍽️",  # 음식의 양을 강조
+                "#연인과함께 💑",  # 연인과의 방문을 추천
+                "#다양한메뉴 📜",   # 메뉴 선택의 폭을 강조
+                "#만족도200프로 😊", # 고객 만족도를 강조
+                "#청결도최상 🧼",  # 위생과 청결을 강조
+                "#주차편리 🚗",    # 주차의 편리함을 강조
+                "#위치편리 📍"    # 접근성의 용이함을 강조
+            ]
+
+        # 사용자 정의 태그 입력
+        custom_tag = st.text_input("나만의 해시태그 추가", placeholder="#맛집", key="custom_tag")
+        add_button = st.button("추가", key="add_tag")
+        if custom_tag and not custom_tag.startswith("#"):
+            custom_tag = "#" + custom_tag
+        if add_button and custom_tag:
+            if custom_tag not in ss.hashtags:
+                ss.hashtags.append(custom_tag)
+                st.success(f"{custom_tag} 추가됨!")
+
+        # 선택된 태그 상태 관리
+        if 'selected_tags' not in st.session_state:
+            ss.selected_tags = []
+
+        # 해시태그 버튼 생성
+        cols = st.columns(3)
+        for i, tag in enumerate(st.session_state.hashtags):
+            if cols[i % 3].button(tag, key=f"tag_{i}"):
+                if tag in st.session_state.selected_tags:
+                    st.session_state.selected_tags.remove(tag)
+                elif len(st.session_state.selected_tags) < 3:
+                    st.session_state.selected_tags.append(tag)
+                else:
+                    st.warning("최대 3개까지만 선택할 수 있습니다.")
+
+        # 선택된 태그 표시 및 관리
+        st.markdown("### 우선순위 최대 3가지")
+        for n, tag in enumerate(ss.selected_tags):
+            # 각 태그에 대한 컬럼을 생성
+            col1, col2 = st.columns([3, 1])  # 비율을 조정하여 태그 이름과 삭제 버튼의 크기를 조절
+
+            # 태그를 보여주는 컬럼
+            with col1:
+                st.markdown(f"**⭐️ {n+1}순위 : {tag}**")
+
+            # 삭제 버튼을 보여주는 컬럼
+            with col2:
+                if st.button("❌", key=f"remove_{tag}"):  # 간단한 아이콘을 사용하여 공간 활용을 최적화
+                    ss.selected_tags.remove(tag)
+                    st.rerun()  # 페이지를 재실행하여 변경사항 적용
+
+            chat_state.selected_tags = ss.selected_tags
+
 def side_bar():
     ####### Sidebar #######
     with st.sidebar:
@@ -322,28 +389,35 @@ def side_bar():
         # user 이름 설정
         user_id_setting()
 
+        # Clear chat history
+        def clear_chat_history():
+            ss.messages = []
+        # 대화창 초기화 설명
+        st.write("#### 👇 대화창을 초기화하려면 아래 버튼을 클릭하세요.")
+        # 초기화 버튼
+        if st.button('Clear Chat History'):
+            clear_chat_history()
+
         # 멘트 추가 
-        st.write("아래에서 원하시는 항목을 선택해주시면, 더 맞춤형 서비스를 제공해드리겠습니다.")  # 설명을 별도로 추가
+        st.write("#### 👇 아래에서 좋아하는 맛집 특성을 선택하시면, 당신을 위한 맞춤 맛집을 찾아드릴게요! 🌟")
 
         # 차 여부 
-        car() 
+        # car() 
+
+        # 식당 테마
+        hashtag()
 
         # 성별 설정 
-        gender()
+        # gender()
 
         # 나이대 설정 
-        age()
+        # age()
 
         # 가격대 설정 
         price()
 
         # food_selection
-        food_selection()
-
-        # Clear chat history
-        def clear_chat_history():
-            ss.messages = []
-        st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
+        # food_selection()
 
     
 def title_header(logo, title):
@@ -430,6 +504,74 @@ def questions_recommending():
     ss.clicked_query = None  # Reset for next use
     return clicked_sample_query
 
+def load_image_from_url(url):
+    response = requests.get(url)
+    img = Image.open(BytesIO(response.content))
+    return img
+
+def display_image(url, width=300):
+    try:
+        img = load_image_from_url(url)
+        st.image(img, width=width, use_column_width=False)
+    except Exception as e:
+        st.error(f"이미지를 불러오는 데 실패했습니다: {e}")
+
+def url_image_final(image_url):
+
+    if image_url:
+        # 이미지 표시를 위한 컨테이너 생성
+        image_container = st.container()
+        
+        with image_container:
+            col1, col2, col3 = st.columns([1,1,1])
+            with col2:
+                display_image(image_url, width=200)
+
+def get_page_info(url):
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        title = soup.find('meta', property='og:title')['content'] if soup.find('meta', property='og:title') else 'No Title'
+        description = soup.find('meta', property='og:description')['content'] if soup.find('meta', property='og:description') else 'No Description'
+        image = soup.find('meta', property='og:image')['content'] if soup.find('meta', property='og:image') else None
+        
+        if image and not image.startswith('http'):
+            image = urljoin(url, image)
+        
+        return title, description, image
+    except Exception as e:
+        st.error(f"Error fetching page info: {e}")
+        return 'Error', 'Could not fetch page information', None
+
+def display_link_card(url):
+    title, description, image = get_page_info(url)
+    
+    st.markdown(f"""
+    <div style="border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:10px;">
+        <h3>{title}</h3>
+        <p>{description}</p>
+        <a href="{url}" target="_blank">예약 페이지로 이동</a>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if image:
+        st.image(image, use_column_width=True)
+
+def url_setting():
+    st.title("네이버 예약 링크 표시")
+    
+    url = "https://booking.naver.com/booking/6/bizes/373000"
+    
+    display_link_card(url)
+    
+    # 추가 정보나 관련 링크를 표시할 수 있습니다
+    st.markdown("### 관련 정보")
+    st.markdown("- 이 식당은 네이버 예약을 통해 예약할 수 있습니다.")
+    st.markdown("- 예약 전 영업시간과 특별 공지사항을 확인해주세요.")
+    st.markdown("- 문의사항은 식당에 직접 연락하시기 바랍니다.")
+
+
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
@@ -443,6 +585,7 @@ def main():
     if 'page' not in ss:
         ss.page = 'language_select'
     
+    url_setting()
     # 언어 선택 페이지
     if ss.page == 'language_select':
         st.title("🍊 환영합니다 / Welcome!")
@@ -510,8 +653,8 @@ def main():
                 chat_state.sources_history.append(None)
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
-            open_ai_chat()
-
+            open_ai_chat()  
+            
 
 
 if __name__ == '__main__':
