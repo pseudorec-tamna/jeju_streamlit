@@ -24,6 +24,8 @@ import requests, time
 import subprocess
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
 from recommendation.prompt import template_sql_prompt
+from recommendation.context_based import context_based_recommendation
+
 from utils.client import MysqlClient
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
@@ -51,6 +53,13 @@ df = df.merge(meta_info[["ADDR", "MCT_TYPE"]], how="left", on="ADDR")
 # # 정보 없는 가게 모두 제거
 # df['title'].replace('', np.nan, inplace=True)
 # df= df.dropna(subset='title')
+
+path_visit_additional_info = './data/poi_df.csv' # 방문이력 데이터에 대한 id 크롤링 따로 진행
+path_transition_matrix = './data/transition_matrix.csv'
+
+
+transition_matrix_df = pd.read_csv(path_transition_matrix)
+visit_poi_df = pd.read_csv(path_visit_additional_info)
 
 
 def load_memory(input, chat_state):
@@ -140,7 +149,12 @@ def get_hw_response(chat_state: ChatState):
             result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
         else: 
             pass 
-              
+        
+        next_rec = None
+        for id_t in rec['id'].values:
+            if id_t in transition_matrix_df.index:
+                next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
+        
     # elif response_type == "Item Detail Search":
     #     # SQL 문으로 검색 가능하도록 
 
