@@ -92,7 +92,7 @@ class ChatState:
         info_location: str = "",
         info_menuplace: list[str] =[''],
         info_keyword: list[str] = [''],
-
+        info_business_type: list[str] = [''],
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
     ) -> None: 
@@ -117,6 +117,7 @@ class ChatState:
         self.info_location = info_location
         self.info_menuplace = info_menuplace
         self.info_keyword = info_keyword
+        self.info_business_type = info_business_type
         self.recommend_term = recommend_term
         self.memory = memory
 
