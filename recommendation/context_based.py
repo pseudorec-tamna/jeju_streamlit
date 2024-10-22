@@ -5,7 +5,6 @@ import numpy as np
 from tqdm import tqdm
 import pandas as pd
 import time
-from sentence_transformers import SentenceTransformer
 import os
 import re
 from sklearn.metrics.pairwise import cosine_similarity
