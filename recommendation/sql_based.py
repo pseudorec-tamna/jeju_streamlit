@@ -23,15 +23,20 @@ def extract_sql_query(result):
         print("SELECT 문을 찾을 수 없습니다.")
 
     from sqlalchemy import text
+
     select_content = text(select_content.encode('utf-8').decode('utf-8'))
+    print(f"쿼리: {select_content}")
     result = pd.read_sql(select_content, con=mysql_uri)
     return result
 
 def sql_based_recommendation(result, df):
+    
     result = extract_sql_query(result.content)
-    rec = df[df["MCT_NM"].isin(result["MCT_NM"])][[
-        "MCT_NM", "MCT_TYPE", "ADDR", "booking", "react1", "react2", "react3", "react4", "react5"
-    ]].head()
+    print('데이터', df[df["MCT_NM"].isin(result["MCT_NM"].values)])
+    print('결과', result)
+    print('컬럼', df.columns)
+    rec = df[df["MCT_NM"].isin(result["MCT_NM"])]
+    print('여어이기', rec)
     return {
         "recommendation": rec,
     }

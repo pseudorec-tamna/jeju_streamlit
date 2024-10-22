@@ -1,29 +1,187 @@
 ## User Preference Elicitation
-sub_task_detection_prompt = """Determine which of the following 4 types of responses is needed for the user's question:
+sub_task_detection_prompt = """
+GOAL:
+* You are a bot which can route user's question for givining appropriate recommendation
+* Determine which of the following 3 types of responses is needed for the user's question:
 
-- User Preference Elicitation
+RESPONSE TYPE:
 - Recommendation
+    * It applies to queries that include a recommendation purpose, like "맛집 추천," even if there isn't much information provided but the intent is clear.
 - Chat
+    * It applies to general conversation.
 - Explanation
-- Item Detail Search
+    * This response is generated for queries that need an explanation of why the recommendation was made or details from the previous conversation.
+    * Do not output this if there is no memory of prior conversation.
 
-if the user's question is about recommendation, determine the type of recommendation as well.
-- Distance-based
-- Attribute-based
+PROCEDURE:
+if the user's question is about recommendation
+    1. First, analyze the question to determine if it contains any elements related to 'location', 'menu_place', or 'keyword'.
+        a. First, identify the 'location,' 'menu_place,' and 'keyword' elements in the question for recommendation purposes.
+        b. In the 'menu_place' part, map it to some of the following elements and put them into the 'business_type' list. Regardless of the number, map the relevant ones and add them to the list. This is to later add the corresponding business type to the menu.
+            The business_type's elements: ['패밀리 레스토랑', '단품요리 전문', '가정식', '햄버거', '구내식당/푸드코트', '도시락', '커피', '맥주/요리주점', '분식', '베이커리', '차', '치킨', '양식', '일식', '피자', '꼬치구이', '중식', '포장마차', '아이스크림/빙수', '떡/한과', '샌드위치/토스트', '주스', '스테이크']
+        c. Based on the factors, determine the best recommendation type to use.
+        d. If a specific menu or place, such as a '식당', 가게, or 맛집, cannot be determined, it cannot be categorized under any factor 'location', 'menu_place', 'keyword'.
+        e. Do not get the '맛집' word in the results
+    2. Check if the query is a response from the user to the previously generated Multi-turn conversation.
+        * If the input is a short response or lacks specific details, such as just naming a menu item or a place they want to visit like '횟집', '흑돼지', it can be a reply to a question aimed at multi-turn conversations.
+        * [Important]However, in the case of Distance-based recommendations, if expressions like '근처', '기끼은', or '[location]에서 갈만한' are present, perform the task without a Multi-turn process.
 
-The response format should be like JSON. Only the results of the json format must be output.
+    3.  Call types based on context within recommendations
+        - Multi-turn
+        - Distance-based (Do not need to proceed Multi-turn essentially)
+        - Attribute-based
+        - Keyword-based
 
-For example: 
-- Input : I want to find a restaurant. 
-- Output : {{'response_type': 'User Preference Elicitation'}}
+    4. Analyze the question, gather the location, menuplace, and keyword information, then check if there are two or more elements. 
+        * Based on this, go through the PROCESSING to determine the type Multi turn or Recommendation.
+    5. [select Multi-turn type]If there's less than two elements within [location, menuplace, keyword] for recommendation, just make the answer for getting enough information.
+        - return 'Multi-turn'
+        - If information about the menu or place is needed, generate a question asking the user what specific menu or place they are looking for.
+        - If location information is required, ask the user where the desired location is.
+    6. [select Recommendation type] If there are two or more elements for recommendation based on the given information and existing data, select the most appropriate recommendation type from the options below that fits the question.
+        The type decision is depends on the original question that user asked.
+        - Distance-based: It's a distance-based model which doesn't need Multi-turn. Select this when the query includes distance-related keywords such as '근처', '가까운', '~에서 갈만한'
+            - For Distance-based, Okay to return recommendations in one go without multi-turn.
+            - However, it is also possible to provide an answer after a multi-turn conversation. In particular, if terms like 'nearby' or 'close' are present, a distance-based recommendation will be selected.
+        - Attribute-based: It's an attribute-based aggregation model. When the query contains information that can be accurately aggregated, this model will be used to generate the query.
+        - Keyword-based: It's a keyword-based condition model. If there's no aggregatable information in the query, but relevant keywords are present, this model will recommend similar items based on keyword similarity.
+          
+IMPORTANCE:
+    * The response format should be like JSON. Only the results of the json format must be output.
+    * If a specific menu or place, such as a '식당', 가게, or 맛집, cannot be determined, it cannot be categorized under any factor 'location', 'menu_place', 'keyword'.
 
-For example: 
-- Input : I want to find a restaurant near Jeju Airport.
-- Output : {{'response_type': 'Recommendation', 'recommendation_type': 'Distance-based'}}
+EXAMPLES:
+        <example1>
+        previous_gotten_info: 
+        {{'location':'', 'menu_place':[''],'keyword': ['']}}
 
+        User's question: 
+        중문 해수욕장 근처에 있는 여자친구랑 갈만한 파스타집
+        
+        Output:
+        {{'response_type': 'Recommendation', 
+        recommendation_factors':{{'location':'중문 해수욕장', 'menu_place':['파스타'],'keyword': ['여자친구랑 갈 만한'], 'business_type': ['단품요리 전문', '가정식', '스테이크', '피자','양식']}},
+        'processing': 'The location "중문 해수욕장" is provided, along with the keyword "여자친구랑 갈만한" and the menu "파스타". "파스타" can be commonly handled in "단품요리 전문", "가정식", "스테이크", "피자", "양식". When combined with the "previous_gotten_info", there are three factors, and since the keyword "여자친구랑 갈 만한" is highlighted, choose the "Keyword-based" recommendation type.',
+        'recommendation_type': 'Keyword-based'}}
+
+
+        <example2>
+        previous_gotten_info: 
+        {{'location':'', 'menu_place':[''],'keyword': ['']}}
+
+        User's question: 
+        중문 맛집 추천
+
+        Processing:
+        There is a location called "중문," but no specific information is provided, so add the 'location' data.
+        
+        Output:
+        {{'response_type': 'Recommendation', 
+        'recommendation_factors':{{'location':'중문', 'menu_place':[''],'keyword': [''], 'business_type': ['']}},
+        'processing': 'There is a location called "중문," but no specific information is provided, so add the "location" data.',
+        'recommendation_type': 'Multi-turn'}}
+
+        <example3>
+        previous_gotten_info: 
+        {{'location':'', 'menu_place':[''],'keyword': ['']}}
+
+        User's question: 
+        색달동에서 40대와 60대 고객 비중의 합이 가장 높은 구내식당/푸드코트식당은 어디인가요?
+        
+        Output:
+        {{'response_type': 'Recommendation', 
+        'recommendation_factors':{{'location':'색달동', 'menu_place':['구내식당'],'keyword': ['40대와 60대 고객 비중의 합이 가장 높은'], 'business_type': ['구내식당/푸트코트']}},
+        'processing': 'The location "색달동" is provided, along with specific information about the combined customer ratio of people in their 40s and 60s being the highest. Given this precise data and the location of "구내식당", it seems that accurate aggregation is possible. Proceed with attribute-based processing. The business would be "구내식당/푸드코트".',
+        'recommendation_type': 'Attribute-based'}}
+
+        <example1>
+        previous_gotten_info: 
+        {{'location':'애월', 'menu_place':[''],'keyword': ['']}}
+
+        User's question: 
+        근처 횟집
+        
+        Output:
+        {{'response_type': 'Recommendation', 
+        'recommendation_factors':{{'location':'애월', 'menu_place':['횟집'],'keyword': [], 'business_type': ['단품요리 전문', '가정식', '일식']}},
+        'processing': 'Since we have the information that the user wants "횟집" add this to the "menu_place". the menu's business_type can be commonly mapped as "단품요리 전문", "가정식", "일식".With the previous "location" "애월" already in "previous_gotten_info", And regardless of the number of elements, if there's a comment like "근처" it should be categorized as distance-based.
+        'recommendation_type': 'Distance-based',
+
+        <example2>
+        previous_gotten_info: 
+        {{'location':'', 'menu_place':[''],'keyword': ['']}}
+
+        User's question: 
+        고기 맛집
+
+        Output:
+        {{'response_type': 'Recommendation', 
+        'recommendation_factors':{{'location':'', 'menu_place':['고기'],'keyword': [''], 'business_type':['단품요리 전문','가정식','스테이크','패밀리 레스토랑','중식']}},
+        'processing': 'For the input "고기 맛집" without any additional details, add it to "menu_place". firstly analyze the '고기', it can be mapped as '단품요리 전문', '가정식','패밀리 레스토랑','중식' as usual.Since there is no specific information from previous conversations or in "previous_gotten_info", select a "Multi-turn" approach to gather more information rather than making a recommendation.', 
+        'recommendation_type': 'Multi-turn'}}
+
+        <example3>
+        previous_gotten_info: 
+        {{'location':'', 'menu_place':[''],'keyword': ['']}}
+
+        User's question: 
+        엄마랑 갈만한곳
+
+        Output:
+        {{'response_type': 'Recommendation', 
+        'recommendation_factors':{{'location':'', 'menu_place':[''],'keyword': ['엄마랑 갈만한'], 'business_type': ['']}},
+        'procedding': 'The only specific information provided is the keyword "엄마랑 갈만한", and since "곳" was mentioned, it seems like the user wants a "Recommendation" for anywhere. Therefore, categorize this as a "Recommendation". However, due to the lack of "menu" details or "location" information, classify it under the sub-type "Multi-turn" to gather more information.',
+        'recommendation_type': 'Multi-turn'}}
+
+        
+        <example4>
+        previous_gotten_info: 
+        {{'location':'', 'menu_place':[''],'keyword': ['엄마랑 갈만한']}}
+
+        User's question: 
+        해물탕집
+
+        Output:
+        {{'response_type': 'Recommendation, 
+        'recommendation_factors':{{'location':'', 'menu_place':['해물탕'],'keyword': ['엄마랑 갈만한'], 'business_type': ['가정식','단품요리 전문']}},
+        'processing': 'The specific menu item "해물탕" has been provided. Since the user has entered the menu they want, proceed with the "Recommendation" type. '해물탕' can be handled in '가정식', '단품요리 전문' as usual. With the two clues of "엄마랑 갈만한" and the menu item(해물탕), proceed with the Recommendation. As both "menuplace" and "keyword" information are available, choose a "Keyword-based" recommendation.',
+        'recommendation_type': 'Keyword-based'}}
+    
+previous_gotten_info: 
+{{'location': {location}, 'menu_place':{menuplace}, 'keyword': {keyword}}} 
+    
 User's question: 
-- Input : {user_question}
-- Output : """
+{user_question}
+
+Output: 
+"""
+
+# sub_task_detection_prompt = """Determine which of the following 4 types of responses is needed for the user's question:
+
+# - User Preference Elicitation
+# - Recommendation
+# - Chat
+# - Explanation
+# - Item Detail Search
+
+# if the user's question is about recommendation, determine the type of recommendation as well.
+# - Distance-based
+# - Attribute-based
+
+# The response format should be like JSON. Only the results of the json format must be output.
+
+# For example: 
+# - Input : I want to find a restaurant. 
+# - Output : {{'response_type': 'User Preference Elicitation'}}
+
+# For example: 
+# - Input : I want to find a restaurant near Jeju Airport.
+# - Output : {{'response_type': 'Recommendation', 'recommendation_type': 'Distance-based'}}
+
+# User's question: 
+# - Input : {user_question}
+# - Output : """
+
 
 address_extract_prompt = """주어진 유저의 질문에서 주소만 추출해주세요. 
 For example: 제주도 제주시 우진 해장국에서 가장 가까운 맛집을 추천해주세요. 
@@ -90,8 +248,93 @@ Table Name : basic_info
 | 202301 | 해변 | 20050407 | 단품요리 전문 | 제주 제주시 애월읍 애월리 410-6번지 | 3_25~50% | 2_10~25% | 2_10~25% | 0.090909 | 0.121212 | 0.045455 | 0.136364 | 0.181818 | 0.242424 | 0.181818 | 0.015152 | 0.181818 | 0.242424 | 0.560606 | 0.0 | 0.230928 | 0.542 | 0.458 | 0.221 | 0.201 | 0.195 | 0.244 | 0.139 |
 </data sample>
 
-단, 기준연월에 대한 언급이 없으면 WHERE YM = '202312'을 기본으로 추가해주세요. 
-SELECT는 MCT_NM만 추출하면 됩니다. 
+
+IMPORTANCE:
+* Ensure that the address specified in the query is accurate without missing or altering any characters. For example, if the location is "이도이동," make sure to include it exactly as "%이도이동%" in the query.
+* For conditions involving top or bottom percentages, ensure clarity in the MySQL query:
+* If the query requests the top 10%, select "1_상위 10% 이하" in the query.
+* If the query requests the top 20%, select "2_10~25%" in the query.
+* If the query requests the top 50%, select "3_25~50%" in the query.
+* If the query requests the top 5075%, select "4_50~75%" in the query.
+* If the query requests the top 7590%, select "5_75~90%" in the query.
+* If the query requests the top 90%, select "6_90%" in the query.
+* If the query requests the bottom 90%, select "1_상위 10% 이하" in the query.
+* If the query requests the bottom 7590%, select "2_10~25%" in the query.
+* If the query requests the bottom 50%, select "4_50~75%" in the query.
+* If the query requests the bottom 5075%, select "3_25~50%" in the query.
+* If the query requests the bottom 20%, select "5_75~90%" in the query.
+* If the query requests the bottom 10%, select "6_90%" in the query.
+* 기준연월에 대한 언급이 없으면 WHERE YM = '202312'을 기본으로 추가해주세요. 
+* SELECT는 MCT_NM만 추출하면 됩니다. 
+
+Question: 
+삼양삼동에서 야간(23시-4시) 이용 비중이 가장 낮은 단품요리 전문식당 중 남성 고객 비중이 가장 낮은 곳은?
+
+SQL Query: 
+```sql
+SELECT 
+    `basic_info`.`MCT_NM`
+FROM 
+    `basic_info`
+WHERE 
+    `basic_info`.`MCT_TYPE` = '단품요리 전문'
+    AND `basic_info`.`ADDR` LIKE '%삼양삼동%'
+    -- 야간 이용 비중이 가장 낮은 단품요리 전문식당 중에서
+    AND `basic_info`.`HR_23_4_UE_CNT_RAT` = (SELECT MIN(`HR_23_4_UE_CNT_RAT`) 
+                                              FROM `basic_info` 
+                                              WHERE `MCT_TYPE` = '단품요리 전문' 
+                                              AND `ADDR` LIKE '%삼양삼동%')
+ORDER BY 
+    -- 남성 고객 비중이 가장 낮은 순으로 정렬
+    `basic_info`.`RC_M12_MAL_CUS_CNT_RAT` ASC
+LIMIT 1;
+```
+
+Question:
+성산읍에서 최근 12개월 동안 50대 고객 비중이 가장 높은 찻집은 어디인가요?
+
+SQL Query:
+```sql
+SELECT 
+    MCT_NM  -- 식당 이름
+FROM 
+    basic_info 
+WHERE 
+    MCT_TYPE = '차'  -- 식당 종류가 '차'인 경우
+    AND ADDR LIKE '%성산읍%'  -- 주소가 '성산읍'을 포함하는 경우
+    AND RC_M12_AGE_50_CUS_CNT_RAT = (  -- 50대 고객 비중이 가장 높은 경우
+        SELECT 
+            MAX(RC_M12_AGE_50_CUS_CNT_RAT)  -- 50대 고객 비중의 최댓값을 찾습니다.
+        FROM 
+            basic_info
+        WHERE 
+            MCT_TYPE = '차'  -- 식당 종류가 '차'인 경우
+            AND ADDR LIKE '%성산읍%'  -- 주소가 '성산읍'을 포함하는 경우
+    )
+ORDER BY 
+    RC_M12_AGE_50_CUS_CNT_RAT DESC  -- 50대 고객 비중 내림차순으로 정렬하여 가장 높은 비중을 가진 식당을 먼저 보여줍니다.
+LIMIT 1;
+
 
 Question: {question}
 SQL Query:"""
+
+keyword_recommendation_prompt = """
+* You are a bot that recommends restaurants with similar keywords based on the given keywords from the database.
+
+PROCEDURE:
+* If location information or menu information is available, first extract the data that matches.
+* From that, select the top 5 restaurants with keywords closest to the query and rank them. If fewer than 5 are available, extract as many as possible.
+* After selecting the restaurants, write a reason for why each was chosen.
+
+OUTPUT FORMAT:
+* Generate the response in LIST[JSON] format.
+* [{{"title": restaurant_name, "reason": reason_for_recommendation}}, {{"title": restaurant_name, "reason": reason_for_recommendation}}...]
+
+
+DATABASE: 
+{}
+
+
+
+"""

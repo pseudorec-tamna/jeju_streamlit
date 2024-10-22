@@ -37,6 +37,7 @@ def get_bot_response(
             callbacks=chat_state.callbacks,
             stream=True,
         )
+        
         answer = chat_chain.invoke(
             {
                 "message": chat_state.message,

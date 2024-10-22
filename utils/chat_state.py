@@ -89,6 +89,12 @@ class ChatState:
         price_range:list[int] | None = None,
         selected_tags:list[str] | None = None,
         memory = ConversationBufferMemory(return_messages=True, memory_key="chat_history"),
+        multi_turn_amount: int = 0,
+        recommend_term:bool = False,
+        info_location: str = "",
+        info_menuplace: list[str] =[''],
+        info_keyword: list[str] = [''],
+        info_business_type: list[str] = [''],
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
     ) -> None: 
@@ -111,6 +117,12 @@ class ChatState:
         self.uploaded_docs = uploaded_docs or []
         self.price_range = price_range or []
         self.selected_tags = selected_tags or []
+        self.multi_turn_amount = multi_turn_amount
+        self.info_location = info_location
+        self.info_menuplace = info_menuplace
+        self.info_keyword = info_keyword
+        self.info_business_type = info_business_type
+        self.recommend_term = recommend_term
         self.memory = memory
 
     # @property
