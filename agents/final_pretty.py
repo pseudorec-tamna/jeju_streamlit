@@ -47,19 +47,32 @@ def load_memory(input, chat_state):
 
 
 def df_filter(title, addr):
-    df_tmp = df[(df['title'] == title) & (df['ADDR'] == addr)]
-    id = df_tmp['id'].iloc[0]
+    df_tmp = df[(df['title'].str.contains(title)) & (df['ADDR'] == addr)]
+    
+    # 데이터가 있는지 확인
+    if df_tmp.empty:
+        return None
+    
+    # 안전하게 값을 가져오기 위해 get 메서드 사용
+    def safe_get(series, default=None):
+        return series.iloc[0] if not series.empty else default
+
+    id = safe_get(df_tmp['id'])
+    if id is None:
+        return None  # id가 없으면 None 반환
+
     id_url = f"https://m.place.naver.com/restaurant/{id}/home?entry=plt&reviewSort=recent"
-    booking = df_tmp["booking"].iloc[0]
-    img = df_tmp['img_url'].iloc[0]
-    menu_tags = df_tmp['menu_tags'].iloc[0]
-    feature_tags = df_tmp['feature_tags'].iloc[0]
-    review = df_tmp['review'].iloc[0]
-    revisit = df_tmp['revisit'].iloc[0]
-    reservation = df_tmp['reservation'].iloc[0]
-    companion = df_tmp['companion'].iloc[0]
-    waiting_time = df_tmp['waiting_time'].iloc[0]
-    review_count = df_tmp['v_review_cnt'].iloc[0]
+    booking = safe_get(df_tmp['booking'], default="")
+    img = safe_get(df_tmp['img_url'], default="")
+    menu_tags = safe_get(df_tmp['menu_tags'], default="")
+    feature_tags = safe_get(df_tmp['feature_tags'], default="")
+    review = safe_get(df_tmp['review'], default="")
+    revisit = safe_get(df_tmp['revisit'], default="")
+    reservation = safe_get(df_tmp['reservation'], default="")
+    companion = safe_get(df_tmp['companion'], default="")
+    waiting_time = safe_get(df_tmp['waiting_time'], default="")
+    review_count = safe_get(df_tmp['v_review_cnt'], default=0)
+
     return id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count
 
 def tags2dict(input_str):
@@ -89,7 +102,7 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
     if booking and booking.strip():
         content += f"<p><b>📅 바로 예약하기:</b> <a href='{booking}' style='text-decoration: none; color: #007bff;'>여기를 클릭</a></p>\n"
     
-    if review_count:
+    if review_count and str(review_count) > "0":
         content += f"<p><b>🔢 리뷰 수:</b> {review_count} 개</p>\n"
     
     if menu_tags and len(menu_tags) > 3:
@@ -129,70 +142,3 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
     
     content += "</div>"
     return content
-
-def get_hw_response(chat_state: ChatState):
-    # Initialize the Gemini 1.5 Flash LLM
-    llm = ChatGoogleGenerativeAI(
-        model=chat_state.bot_settings.llm_model_name,
-        google_api_key=chat_state.google_api_key
-    )
-    
-    response = sub_task_detection(chat_state.message)
-    response_type = json_format(response)["response_type"]
-    print("response_type:",response_type)
-
-    if response_type == "Chat":
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm
-        result = chain.invoke({"question": chat_state.message})
-
-    elif response_type == "Recommendation":
-        
-        if json_format(response)["recommendation_type"] == "Distance-based":
-            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm
-            coord = get_coordinates_by_question(chat_state.message)
-            st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
-            print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
-
-            # from IPython.display import IFrame
-            latitude, longitude = coord  # coord에서 위도와 경도 추출
-            # display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
-            st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
-            
-            while True: 
-                response = requests.get('http://127.0.0.1:5000/get_coordinates')
-                coordinates = response.json()
-                latitude = coordinates['latitude']
-                longitude = coordinates['longitude']
-                if latitude is not None and longitude is not None:
-                    break
-                time.sleep(5)
-            
-            rec = coordinates_based_recommendation((longitude, latitude), df)
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec})  
-        elif json_format(response)["recommendation_type"] == "Attribute-based":
-            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm
-            sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
-            sql_chain = sql_prompt | llm
-            output = sql_chain.invoke({"question": chat_state.message})            
-            rec = sql_based_recommendation(output, df)
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec, "search_info": output.content})  
-        else: 
-            pass 
-    
-    elif response_type == "Item Detail Search":
-        # SQL 문으로 검색 가능하도록 
-
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | item_search_prompt_template | llm
-        item_info = df.loc[df["MCT_NM"] == str(chat_state.message)].reset_index(drop=True)
-        print("item_info:", item_info)
-        result = chain.invoke({
-            "question": chat_state.message,
-            "MCT_NM": item_info["MCT_NM"],
-            "ADDR": item_info["ADDR"],
-            "tel": item_info["tel"],
-            "booking": item_info["booking"]
-            })
-    else: 
-        pass 
-    response = {"answer": result.content}
-    return response

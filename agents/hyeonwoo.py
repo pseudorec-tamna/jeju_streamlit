@@ -30,7 +30,6 @@ from utils.client import MysqlClient
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 
@@ -178,8 +177,8 @@ def format_docs(docs):
 model_name = "upskyy/bge-m3-Korean"
 model_kwargs = {
     # "device": "cuda"
-    "device": "mps"
-    # "device": "cpu"
+    # "device": "mps"
+    "device": "cpu"
 }
 encode_kwargs = {"normalize_embeddings": True}
 hugging_embeddings = HuggingFaceEmbeddings(
@@ -218,9 +217,7 @@ def get_hw_response(chat_state: ChatState):
     keyword = chat_state.info_keyword
     business_type = chat_state.info_business_type
 
-
     response = sub_task_detection(chat_state.message, location, menuplace, keyword)
-
 
     response_type = json_format(response)["response_type"]
     print(f"답변 타입:{response_type}")
@@ -235,8 +232,8 @@ def get_hw_response(chat_state: ChatState):
         
     elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
         rec = None # 변수 초기화
-        print(f"추천 타입:{json_format(response)["recommendation_type"]}")
-        print(f"추천 요소:{json_format(response)["recommendation_factors"]}")
+        print(f"추천 타입:{json_format(response)['recommendation_type']}")
+        print(f"추천 요소:{json_format(response)['recommendation_factors']}")
         menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
         location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
         keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
@@ -303,10 +300,10 @@ def get_hw_response(chat_state: ChatState):
                     }
                 }
             )
-            docs = hugging_retriever.invoke(chat_state.message)
-            print('키워드 추천 문서:', docs[0])
+            rec = hugging_retriever.invoke(chat_state.message)
+            print('키워드 추천 문서:', rec[0])
             chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-            result = chain.invoke({"question": chat_state.message, "recommendations": docs[0]})
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec[0]})
             
             chat_state.info_menuplace = ['']
             chat_state.info_location = ''
@@ -360,7 +357,7 @@ def get_hw_response(chat_state: ChatState):
         pass 
     print(f"답변 타입:{response_type}")
     print('여기서의 응답', result)
-    response = {"answer": result}
+    response = {"answer": result, 'title': rec[0].metadata['name'], 'address': rec[0].metadata['full_location']}
     print('응답', response)
 
     return response
