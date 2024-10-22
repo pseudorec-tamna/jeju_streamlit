@@ -1,4 +1,5 @@
 import os
+
 import streamlit as st
 from PIL import Image
 from io import BytesIO
@@ -94,7 +95,8 @@ def open_ai_chat(eng_flag=False):
     # 기존 메시지 표시
     for message in ss.messages:
         with st.chat_message(message["role"], avatar=message.get("avatar")):
-            st.markdown(message["content"])
+            # HTML 형식으로 렌더링되도록 unsafe_allow_html 설정
+            st.markdown(message["content"], unsafe_allow_html=True)
 
     # 질문지 생성 
     with st.container():
@@ -138,6 +140,11 @@ def open_ai_chat(eng_flag=False):
             response = get_bot_response(chat_state)
             answer = response["answer"]
 
+            # Check if title and address exists, and display the relevant URL info
+            info_box = ""
+            if response["title"] and response["address"]:
+                info_box = url_setting(response["title"], response["address"])   
+            
             # Display the "complete" status - custom or default
             if status:
                 default_status = status_config.get(chat_mode, just_chat_status_config)
@@ -151,7 +158,11 @@ def open_ai_chat(eng_flag=False):
             chat_state.chat_history.append((prompt, answer))
             # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
             message_placeholder.markdown(fix_markdown(answer))
-        ss.messages.append({"role": "assistant", "content": answer})
+            if info_box:
+                st.markdown(info_box, unsafe_allow_html=True)
+
+        # Assistant 메시지와 info_box를 함께 추가 (HTML 포함)
+        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box}"})
         # 페이지 새로고침
         st.rerun()
     # else:
@@ -260,7 +271,6 @@ def car():
                     use_container_width=True,
                     type="primary" if chat_state.car == "n" else "secondary"):
             chat_state.car = "n"
-
 
 def food_selection():
     # 음식 종류 리스트
@@ -519,7 +529,13 @@ def questions_recommending(eng_flag=False):
     return clicked_sample_query
 
 def url_setting(title, addr):    
-    id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count = df_filter(title, addr)
+    # df_filter 호출 후 결과값이 None인지 체크
+    result = df_filter(title, addr)
+    if result is None:
+        # 데이터가 없으면 안내 메시지 표시
+        return ""
+        
+    id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count = result
     content = display_store_info(id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count)
 
     # 이미지가 있을 경우 사진 추가 (클릭 시 새 창에서 원본 보기)
@@ -528,14 +544,14 @@ def url_setting(title, addr):
         image_html = f"""
             <div>
                 <a href="{id_url}" target="_blank">
-                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 600px; max-height: 130px; object-fit: cover; border-radius: 10px; margin-bottom: 10px;">
+                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 600px; max-height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 2px;">
                 </a>
             </div>
         """
 
     # 최종 HTML을 Markdown에 적용
-    st.markdown(f"""
-        <div style="border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:10px;">
+    info_box = f"""
+        <div style="border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:0px;">
             <div>{image_html}</div>
             <details>
                 <summary style="cursor: pointer; font-size: 1.2em; font-weight: bold;">🍊 {title} 정보</summary>
@@ -544,42 +560,49 @@ def url_setting(title, addr):
                 </div>
             </details>
         </div>
-        """, unsafe_allow_html=True)
+        """
+    return info_box
 
 def mode_selection():
     # 세션 상태에 따라 기본 선택된 모드를 설정
-    if 'selected_mode' not in st.session_state:
-        st.session_state.selected_mode = '일반 추천 모드'
+    if 'selected_mode' not in ss:
+        ss.selected_mode = '일반 추천 모드'
 
     # 버튼 클릭을 처리하는 함수
     def select_mode(mode):
-        st.session_state.selected_mode = mode
+        ss.selected_mode = mode
+        chat_state.chat_mode = mode  # 선택된 모드에 따라 chat_state 업데이트
 
+    # 모드를 선택하는 영역을 생성
     with st.expander(f"선택된 모드: {st.session_state.selected_mode}", expanded=True):
-        words = """⏺︎ **일반 추천 모드**: 이 모드에서는 여러 정보를 검색하고, 여러분의 취향과 여행 경로에 맞는 맛집을 빠르게 추천해 드립니다.
-                간단하게 원하는 음식 종류나 스타일을 입력하면, 관련된 맛집을 찾아 추천해 드려요.
+        st.markdown(
+            """
+            **🔍 모드를 선택하여 맞춤형 맛집 추천을 받으세요!**
 
-                ⏺︎ **집계 모드**: 이 모드에서는 더 심층적인 분석을 통해, 지역 내에서 가장 인기 있는 맛집을 찾아드립니다.
-                여러 데이터를 분석하여 해당 지역에서 어디가 가장 많이 방문되고 사랑받는 곳인지를 알려드리죠.
-                이 방식은 특히 통계와 집계 결과를 바탕으로 한 추천을 선호하는 분들에게 유용해요!
-                """
-        st.markdown(words)
+            - ⏺︎ **일반 추천 모드**: 다양한 정보를 기반으로 취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.
+            - ⏺︎ **집계 모드**: 인기 데이터를 분석하여 지역에서 가장 방문 빈도가 높은 맛집을 추천합니다.
+            """
+        )
 
-        # 가로 버튼을 생성
-        col1, col2 = st.columns(2)
+        # 버튼을 가로로 배치 (컬럼 사용)
+        col1, col2 = st.columns([1, 1], gap="medium")
         with col1:
             if st.button("일반 추천 모드",
                          key="general_mode", 
                          help="취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.",
-                         use_container_width=True):
+                         use_container_width=True,
+                         type="primary" if st.session_state.selected_mode == "일반 추천 모드" else "secondary"):
                 select_mode("일반 추천 모드")
         with col2:
             if st.button("집계 모드", 
                          key="aggregate_mode", 
                          help="지역 내 가장 인기 있는 맛집을 분석하여 추천합니다.",
-                         use_container_width=True):
+                         use_container_width=True,
+                         type="primary" if st.session_state.selected_mode == "집계 모드" else "secondary"):
                 select_mode("집계 모드")
 
+    # 선택된 모드를 표시
+    st.markdown(f"**현재 선택된 모드**: {st.session_state.selected_mode}")
 
 
 def main():
@@ -593,7 +616,11 @@ def main():
     if 'page' not in ss:
         ss.page = 'language_select'
 
-    # url_setting("제주그때그집 노형점", "제주 제주시 노형동 1045-11번지 1층")
+    # list_addr = [["제주그때그집 노형점", "제주 제주시 노형동 1045-11번지 1층"], 
+    #  ["엉또정 서귀포본점", "제주 서귀포시 강정동 1938번지"]]
+    # for i in list_addr:
+    #     j = url_setting(i[0], i[1])
+    #     st.markdown(j, unsafe_allow_html=True)
     
     # 언어 선택 페이지
     if ss.page == 'language_select':
