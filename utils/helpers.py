@@ -13,10 +13,10 @@ DELIMITER80_NONL = "-" * 80
 INTRO_ASCII_ART = """\
  ,___,   ,___,   ,___,                                                 ,___,   ,___,   ,___,
  [OvO]   [OvO]   [OvO]                                                 [OvO]   [OvO]   [OvO]
- /)__)   /)__)   /)__)               WELCOME TO TAMLA's Flavor               /)__)   /)__)   /)__)
+ /)__)   /)__)   /)__)               WELCOME TO TAMNA's Flavor               /)__)   /)__)   /)__)
 --"--"----"--"----"--"--------------------------------------------------"--"----"--"----"--"--"""
 
-MAIN_BOT_PREFIX = "TAMLA: "
+MAIN_BOT_PREFIX = "TAMNA: "
 
 PRIVATE_COLLECTION_PREFIX = "u-"
 PRIVATE_COLLECTION_PREFIX_LENGTH = len(PRIVATE_COLLECTION_PREFIX)
@@ -64,20 +64,24 @@ command_ids = {
 
 DEFAULT_CHAT_MODE = 6 # command_ids[DEFAULT_MODE]
 
+# GREETING_MESSAGE_KOR = """\
+# **🍊 안녕하세요! 저는 탐라는 맛 AI입니다!** 여행 중에 맛집을 찾는 데 도움이 필요하신가요? 저는 여러분의 취향과 요구에 맞춰 최적의 맛집을 추천해 드립니다. **두 가지 모드**로 더욱 다양한 방식의 추천을 제공합니다:
+
+# - **일반 추천 모드**: 이 모드에서는 여러 정보를 검색하고, 여러분의 취향과 여행 경로에 맞는 맛집을 빠르게 추천해 드립니다.
+# 간단하게 원하는 음식 종류나 스타일을 입력하면, 관련된 맛집을 찾아 추천해 드려요.
+# - **집계 모드**: 이 모드에서는 더 심층적인 분석을 통해, 지역 내에서 가장 인기 있는 맛집을 찾아드립니다.
+# 여러 데이터를 분석하여 해당 지역에서 어디가 가장 많이 방문되고 사랑받는 곳인지를 알려드리죠.
+# 이 방식은 특히 통계와 집계 결과를 바탕으로 한 추천을 선호하는 분들에게 유용해요!
+
+# 어떤 모드를 사용하든, 여러분의 여행이 더욱 특별해질 수 있도록 도와드릴게요. 탐라는 맛 AI와 함께 맛있는 미식 여행을 떠나보세요! 😋
+# """
+
 GREETING_MESSAGE_KOR = """\
 **🍊 안녕하세요! 저는 탐라는 맛 AI입니다!** 여행 중에 맛집을 찾는 데 도움이 필요하신가요? 저는 여러분의 취향과 요구에 맞춰 최적의 맛집을 추천해 드립니다. **두 가지 모드**로 더욱 다양한 방식의 추천을 제공합니다:
-
-- **일반 추천 모드**: 이 모드에서는 여러 정보를 검색하고, 여러분의 취향과 여행 경로에 맞는 맛집을 빠르게 추천해 드립니다.
-간단하게 원하는 음식 종류나 스타일을 입력하면, 관련된 맛집을 찾아 추천해 드려요.
-- **집계 모드**: 이 모드에서는 더 심층적인 분석을 통해, 지역 내에서 가장 인기 있는 맛집을 찾아드립니다.
-여러 데이터를 분석하여 해당 지역에서 어디가 가장 많이 방문되고 사랑받는 곳인지를 알려드리죠.
-이 방식은 특히 통계와 집계 결과를 바탕으로 한 추천을 선호하는 분들에게 유용해요!
-
-어떤 모드를 사용하든, 여러분의 여행이 더욱 특별해질 수 있도록 도와드릴게요. 탐라는 맛 AI와 함께 맛있는 미식 여행을 떠나보세요! 😋
 """
 
 GREETING_MESSAGE_ENG = """\
-**🍊 Hello! I'm Tamla's Flavor AI!** Are you looking for help finding the best restaurants on your trip? I can recommend the perfect spots based on your preferences and needs. I offer **two modes** to provide you with different types of recommendations:
+**🍊 Hello! I'm Tamna's Flavor AI!** Are you looking for help finding the best restaurants on your trip? I can recommend the perfect spots based on your preferences and needs. I offer **two modes** to provide you with different types of recommendations:
 
 - **General Recommendation Mode**: In this mode, I quickly search through various sources to recommend restaurants that match your preferences and travel route.
 Simply enter the type of food or style you want, and I'll find related restaurants and recommend them to you.
@@ -85,12 +89,12 @@ Simply enter the type of food or style you want, and I'll find related restauran
 I analyze various data to show you the places that are most visited and loved in the region.
 This mode is especially useful for those who prefer recommendations based on statistics and aggregated results.
 
-Whichever mode you choose, I'll help make your trip even more special. Enjoy a delicious culinary journey with Tamla's Flavor AI! 😋
+Whichever mode you choose, I'll help make your trip even more special. Enjoy a delicious culinary journey with Tamna's Flavor AI! 😋
 """
 
 
 # GREETING_MESSAGE = """\
-# 👋**Hi, I'm TAMLA:green[Go]!** My superpower is **infinite research** - when you need to go beyond a quick Google search, I will comb through hundreds of websites looking for the information you need. I can:
+# 👋**Hi, I'm Tamna:green[Go]!** My superpower is **infinite research** - when you need to go beyond a quick Google search, I will comb through hundreds of websites looking for the information you need. I can:
 
 # - look for sources containing something specific you need (_heatseek_ research mode), or
 # - write a report using all sources and put them in a knowledge base for follow-up chat (_classic_ research)
@@ -292,7 +296,7 @@ If the number of past messages is not specified, the entire conversation will be
 """
 
 DESCRIPTION_FOR_HEALTH_UNIVERSE = """\
-Tamla's Flavor AI is more than just a chatbot, it's your tireless research assistant. It automates tasks that normally involve manually sifting through dozens (or hundreds!) of online resources in search of precious nuggets of relevant hard-to-find information. It can
+Tamna's Flavor AI is more than just a chatbot, it's your tireless research assistant. It automates tasks that normally involve manually sifting through dozens (or hundreds!) of online resources in search of precious nuggets of relevant hard-to-find information. It can
 
 - find hundreds of websites about your chosen topic/query and ingest into a knowledge base
 - write a report on your topic/query based on the ingested content
@@ -300,7 +304,7 @@ Tamla's Flavor AI is more than just a chatbot, it's your tireless research assis
 - search for an answer to a specific narrow question or hard-to-find piece of data by sifting through hundreds of Google search results
 - create a knowledge base from your local documents (Word docs, PDFs, etc.)
 
-Oh, and it's "self-aware" -  you can ask Tamla's Flavor AI questions about itself and it will help you navigate its many features.
+Oh, and it's "self-aware" -  you can ask Tamna's Flavor AI questions about itself and it will help you navigate its many features.
 
 Basic usage:
 
