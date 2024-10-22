@@ -37,6 +37,7 @@ def get_coordinates_by_nominatim(address):
         location = geolocator.geocode(address)
         n += 1 
         if n > 3: break
+    print('get_coordinates_by_nominatim함수')
     return (location.longitude, location.latitude)
 
 # 카카오 주소 추출 
@@ -52,6 +53,7 @@ def get_keyword(query):
         "query": query
     }
     response = requests.get(url, headers=headers, params=params).json()
+    print('get_keyword함수')
     return response
 
 
@@ -73,6 +75,7 @@ def get_coordinates(address):
     
     print(f"Run: get_coordinates_by_nominatim")
     x, y = get_coordinates_by_nominatim(address)
+    print('get_coordinates함수')
     return x, y
 
 # 3. Odsay API 호출 
@@ -101,6 +104,7 @@ def find_path(start_coords, end_coords):
     #     print(response.json())  # JSON 형식으로 응답 출력
     # else:
     #     print(f"Error: {response.status_code}, {response.text}")
+    print('find_path함수')
     return response.json()
 
 def calculate_distances(coords, df):
@@ -111,6 +115,7 @@ def calculate_distances(coords, df):
         coord2 = (row['lat'], row['long'])
         distance = geodesic(coord1, coord2).km
         distances.append(distance)
+    print('calculate_distances함수')    
     return distances
 
 def recommend_restaurant_by_distance(coords, df):
@@ -121,6 +126,7 @@ def recommend_restaurant_by_distance(coords, df):
     within_km = tmp[tmp['distance'] <= 2]
     if within_km.shape[0] == 0:
         within_km = tmp[tmp['distance'] <= 5]
+    print('recommend_restaurant_by_distance함수')
     return within_km
 
 def region_detection(question):
@@ -129,9 +135,9 @@ def region_detection(question):
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     load_dotenv()
-
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+    
+    print('region_detection함수')
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", api_key="AIzaSyDwwPQj1u0dyNi2Cw5pYQGHL82f4vyxmas")
     prompt = ChatPromptTemplate.from_template(
         address_extract_prompt
     )
@@ -145,10 +151,7 @@ def region_detection(question):
 def distance_based_recommendation(question, df):
     region = region_detection(question)
     response = get_keyword(region)
-    print(
-        "region:", region,
-        "response:", response
-    )
+
     # 2. 추출된 장소의 좌표를 추출 (long, lat)
     try:
         _region = response["meta"]["same_name"]["selected_region"] + ' ' + response["meta"]["same_name"]["keyword"]
@@ -178,10 +181,7 @@ def distance_based_recommendation(question, df):
 def get_coordinates_by_question(question):
     region = region_detection(question)
     response = get_keyword(region)
-    print(
-        "region:", region,
-        "response:", response
-    )
+
     # 2. 추출된 장소의 좌표를 추출 (long, lat)
     try:
         _region = response["meta"]["same_name"]["selected_region"] + ' ' + response["meta"]["same_name"]["keyword"]
@@ -207,7 +207,5 @@ def coordinates_based_recommendation(coords, df):
     # distance_info = {
     #     "대중교통": str(total_minutes) + "분",
     # }
-    return {
-        "recommendation": rec,
-    #     "distance_info": distance_info
-    }
+    print('coordinates_based_recommendation함수')
+    return  rec

@@ -134,7 +134,7 @@ def open_ai_chat(eng_flag=False):
             )
             chat_state.callbacks[1] = cb
             chat_state.add_to_output = lambda x: cb.on_llm_new_token(x, run_id=None)                
-
+            print(f"현재 사용 봇: {chat_state.chat_mode.value}")
             response = get_bot_response(chat_state)
             answer = response["answer"]
 
