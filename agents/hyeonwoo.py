@@ -265,7 +265,6 @@ def get_hw_response(chat_state: ChatState):
             rec = coordinates_based_recommendation((longitude, latitude), df)
             print('여기 조사', rec)
             result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
-            print(f"\n\n\n\n\n{result}\n\n\n\n")
 
             chat_state.info_menuplace = ['']
             chat_state.info_location = ''
@@ -306,8 +305,7 @@ def get_hw_response(chat_state: ChatState):
             print('키워드 추천 문서:', docs[0])
             chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
             result = chain.invoke({"question": chat_state.message, "recommendations": docs[0]})
-            print('chat_state',chain)
-            print('결과:', result)
+            
             chat_state.info_menuplace = ['']
             chat_state.info_location = ''
             chat_state.info_keyword = ['']
@@ -326,10 +324,11 @@ def get_hw_response(chat_state: ChatState):
         # next_rec을 결과로 출력할 수 있게 프롬프트 또는 response return 값 수정(?)
         # - TOP1 결과에 대해서만 제공, next_rec 값이 None인 경우도 있음 (방문이력X)
         next_rec = None
-        id_t = rec.iloc[0]['id']
-        if id_t in transition_matrix_df.index:
-            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
-        
+        if isinstance(rec, pd.DataFrame):
+            id_t = df[df.MCT_NM==rec.iloc[0].MCT_NM].id.values[0]
+            if id_t in transition_matrix_df.index:
+                next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
+        print(f'--------------\n\nnextrec:{next_rec}\n\n\n--------------')
         
     # elif response_type == "Item Detail Search":
     #     # SQL 문으로 검색 가능하도록 

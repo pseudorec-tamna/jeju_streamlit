@@ -35,7 +35,7 @@ def sql_based_recommendation(result, df):
     print('데이터', df[df["MCT_NM"].isin(result["MCT_NM"].values)])
     print('결과', result)
     print('컬럼', df.columns)
-    rec = df[df["MCT_NM"].isin(result["MCT_NM"])][["MCT_NM", "MCT_TYPE", "ADDR", "booking", "react1", "react2", "react3", "react4", "react5"]].head()
+    rec = df[df["MCT_NM"].isin(result["MCT_NM"])]
     print('여어이기', rec)
     return {
         "recommendation": rec,

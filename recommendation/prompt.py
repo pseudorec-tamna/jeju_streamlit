@@ -32,11 +32,11 @@ if the user's question is about recommendation
         - If location information is required, ask the user where the desired location is.
     5. [select Recommendation type] If there are two or more elements for recommendation based on the given information and existing data, select the most appropriate recommendation type from the options below that fits the question.
         The type decision is depends on the original question that user asked.
-        - Distance-based: It's a distance-based model. Select this when the query includes distance-related keywords such as 'nearby' or 'close.'
-            - For Distance-based, there should be 'retrieval_keyword' for searching.
         - Attribute-based: It's an attribute-based aggregation model. When the query contains information that can be accurately aggregated, this model will be used to generate the query.
         - Keyword-based: It's a keyword-based condition model. If there's no aggregatable information in the query, but relevant keywords are present, this model will recommend similar items based on keyword similarity.
-  
+        - Distance-based: It's a distance-based model. Select this when the query includes distance-related keywords such as 'nearby' or 'close.'
+            - For Distance-based, there should be 'retrieval_keyword' for searching.
+          
 IMPORTANCE:
     * The response format should be like JSON. Only the results of the json format must be output.
     * If a specific menu or place, such as a '식당', 가게, or 맛집, cannot be determined, it cannot be categorized under any factor 'location', 'menu_place', 'keyword'.
@@ -97,7 +97,7 @@ EXAMPLES:
         'recommendation_factors':{{'location':'애월', 'menu_place':['횟집'],'keyword': [], 'business_type': ['단품요리 전문', '가정식', '일식']}},
         'processing': 'Since we have the information that the user wants "횟집" add this to the "menu_place". the menu's business_type can be commonly mapped as "단품요리 전문", "가정식", "일식".With the previous "location" "애월" already in "previous_gotten_info", there are two factors, so set the recommendation type. Although it's not a "keyword," the user mentioned "근처," so choose the distance-based recommendation type. And because "Distance-based" recommendation needs "retrieval_keyword", generate it as "애월 횟집".',
         'recommendation_type': 'Distance-based',
-        'retrieval_keyword': '애월 횟집' }}
+        'retrieval_keyword': '애월 횟집'}}
 
         <example2>
         previous_gotten_info: 

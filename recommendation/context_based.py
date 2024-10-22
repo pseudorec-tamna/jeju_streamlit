@@ -4,11 +4,7 @@ import numpy as np
 
 from tqdm import tqdm
 import pandas as pd
-from selenium import webdriver
 import time
-from selenium.webdriver.common.by import By
-from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from sentence_transformers import SentenceTransformer
 import os
 import re
