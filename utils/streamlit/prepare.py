@@ -15,7 +15,7 @@ from langchain.memory import ConversationBufferWindowMemory
 
 def prepare_app():
     if os.getenv("STREAMLIT_SCHEDULED_MAINTENANCE"):
-        st.markdown("Welcome to Tamla's Flavor! 🍊")
+        st.markdown("Welcome to Tamna's Flavor! 🍊")
         st.markdown(
             "Scheduled maintenance is currently in progress. Please check back later."
         )

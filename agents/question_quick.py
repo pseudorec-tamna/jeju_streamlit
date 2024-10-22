@@ -22,13 +22,17 @@ def get_question_chat_chain(
     chat_state: ChatState,
     prompt_qa=CHAT_QUESTION_PROMPT,
 ):
+    flag = chat_state.flag
+
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
         google_api_key=chat_state.google_api_key
     )
 
     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | prompt_qa | llm
-    result = chain.invoke({})
+    result = chain.invoke({
+        "flag":flag
+    })
 
     # 결과를 파싱하여 리스트로 변환
     content = result.content

@@ -44,7 +44,7 @@ Last Query from Human: {question}
 Standalone version of Last Query: """
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_question_template)
 
-just_chat_system_template = """You are 탐라는 맛(Tamla's Flavor) AI, a friendly Assistant AI who has been equipped with your own special knowledge base and the ability to do Internet research. For this part of the conversation you won't be retrieving any information from your knowledge base or the Internet. Instead, you will just chat with the user, keeping in mind that you may have used your knowledge base and/or the Internet earlier in the conversation. Use Markdown syntax for your reply."""
+just_chat_system_template = """You are 탐라는 맛(Tamna's Flavor) AI, a friendly Assistant AI who has been equipped with your own special knowledge base and the ability to do Internet research. For this part of the conversation you won't be retrieving any information from your knowledge base or the Internet. Instead, you will just chat with the user, keeping in mind that you may have used your knowledge base and/or the Internet earlier in the conversation. Use Markdown syntax for your reply."""
 JUST_CHAT_PROMPT = ChatPromptTemplate.from_messages(
     [
         ("system", just_chat_system_template),
@@ -53,7 +53,7 @@ JUST_CHAT_PROMPT = ChatPromptTemplate.from_messages(
     ]
 )
 
-chat_with_docs_system_template = """You are 탐라는 맛(Tamla's Flavor) AI, a friendly Assistant AI who has been equipped with your own special knowledge base, separated into collections. The currently selected collection is `{coll_name}`. In response to the user's query you have retrieved the most relevant parts of this collection you could find:
+chat_with_docs_system_template = """You are 탐라는 맛(Tamna's Flavor) AI, a friendly Assistant AI who has been equipped with your own special knowledge base, separated into collections. The currently selected collection is `{coll_name}`. In response to the user's query you have retrieved the most relevant parts of this collection you could find:
 
 {context}
 
@@ -111,7 +111,7 @@ CHAT_GREETING_PROMPT = ChatPromptTemplate.from_messages(
 
 chat_question_template = """
 이전 대화 내용을 기반으로 물어볼만한 제주도 맛집 관련 질문을 2개 생성해주세요.
-질문은 최대한 짧고 간단하게 작성하세요. 
+질문은 최대한 짧고 간단하게 {flag} 작성하세요. 
 
 당신이 할 수 있는 기능은 아래와 같습니다:
 - 근처 맛집 추천 : 사용자의 현재 위치 혹은 원하는 장소에서 가장 가까운 맛집을 추천해줍니다.(주소를 최대한 자세하게 알려주세요.) 
@@ -124,8 +124,8 @@ chat_question_template = """
 "질문2"
 ]
 
-질문지는 아래 예시를 참고해서 생성하세요. 질문은 최대한 짧고 간단하게 작성하세요. 
-질문지에는 요청 사항이 한가지만 있도록 하세요.
+질문지는 아래 예시를 참고해서 생성하세요. 질문은 최대한 짧고 간단하게 {flag} 작성하세요. 
+질문지에는 요청 사항이 한가지만 있도록 하세요. 
 
 질문지 예시: 
 - 애월에서 요새 뜨는 카페가 어디야?

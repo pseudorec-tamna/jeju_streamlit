@@ -40,6 +40,7 @@ from utils.streamlit.helpers import (
     just_chat_status_config,
 )
 from streamlit_modal import Modal
+import streamlit.components.v1 as components
 from tamla import get_bot_response
 
 # 로그 설정 
@@ -160,7 +161,7 @@ def user_id_setting():
     user_id = st.sidebar.text_input("User ID", 
                                     label_visibility='visible',
                                     disabled=False,
-                                    placeholder="홍길동")
+                                    placeholder="홍길동 (James)")
     # 양쪽 공백 제거
     user_id = user_id.strip()
 
@@ -284,12 +285,18 @@ def food_selection():
         # else:
         #     st.write("아직 선택된 음식이 없습니다.")
 
-def price():
+def price(eng_flag):
+    if eng_flag: 
+        tmp = "Price Range Setting"
+        tmp_detail = "Please select the price range per person"
+    else:
+        tmp = "가격대 설정"
+        tmp_detail = "1인 기준 가격대를 선택해주세요"
     # Settings
-    with st.expander("가격대 설정", expanded=False):
+    with st.expander(tmp, expanded=False):
         # 가격대 슬라이더
         price_range = st.slider(
-            "1인 기준 가격대를 선택해주세요",
+            tmp_detail,
             min_value=5000,
             max_value=200000,
             value=(5000, 200000),  # Default range
@@ -314,8 +321,26 @@ def ref_dropdown():
         cmd_prefix, cmd_prefix_explainer, _ = age_options[ss.default_mode]
         st.caption(cmd_prefix_explainer)
 
-def hashtag():
-    with st.expander("식당 해시태그", expanded=False):
+def hashtag(eng_flag=False):
+    if eng_flag:
+        # Example hashtag list
+        if 'hashtags' not in ss:
+            ss.hashtags = [
+                "#GreatAtmosphere 🌟",  # Emphasize restaurants with good atmosphere
+                "#Delicious 😋",       # Emphasize excellent taste
+                "#GreatService 👍",  # Emphasize quality of service
+                "#ValueForMoney 💸",    # Emphasize satisfaction for the price
+                "#GenerousPortions 🍽️",  # Emphasize food quantity
+                "#PerfectForCouples 💑",  # Recommend for couples
+                "#DiverseMenu 📜",   # Emphasize wide menu selection
+                "#200%Satisfaction 😊", # Emphasize customer satisfaction
+                "#SpotlessClean 🧼",  # Emphasize hygiene and cleanliness
+                "#EasyParking 🚗",    # Emphasize convenience of parking
+                "#ConvenientLocation 📍"    # Emphasize ease of access
+            ]
+        h_expander = "Restaurant hashtags"
+        text_tmp = "Add your own hashtag"
+    else:
         # 예시 해시태그 리스트
         if 'hashtags' not in ss:
             ss.hashtags = [
@@ -331,16 +356,19 @@ def hashtag():
                 "#주차편리 🚗",    # 주차의 편리함을 강조
                 "#위치편리 📍"    # 접근성의 용이함을 강조
             ]
+        h_expander = "식당 해시태그"
+        text_tmp = "나만의 해시태그 추가"
 
+    with st.expander(h_expander, expanded=False):
         # 사용자 정의 태그 입력
-        custom_tag = st.text_input("나만의 해시태그 추가", placeholder="#맛집", key="custom_tag")
-        add_button = st.button("추가", key="add_tag")
+        custom_tag = st.text_input(text_tmp, placeholder="#맛집" if not eng_flag else "#BestRestaurant", key="custom_tag")
+        add_button = st.button("추가" if not eng_flag else "Add", key="add_tag")
         if custom_tag and not custom_tag.startswith("#"):
             custom_tag = "#" + custom_tag
         if add_button and custom_tag:
             if custom_tag not in ss.hashtags:
                 ss.hashtags.append(custom_tag)
-                st.success(f"{custom_tag} 추가됨!")
+                st.success(f"{custom_tag} {'추가됨!' if not eng_flag else 'added!'}")
 
         # 선택된 태그 상태 관리
         if 'selected_tags' not in st.session_state:
@@ -355,30 +383,25 @@ def hashtag():
                 elif len(st.session_state.selected_tags) < 3:
                     st.session_state.selected_tags.append(tag)
                 else:
-                    st.warning("최대 3개까지만 선택할 수 있습니다.")
+                    st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
 
         # 선택된 태그 표시 및 관리
-        st.markdown("### 우선순위 최대 3가지")
+        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
         for n, tag in enumerate(ss.selected_tags):
-            # 각 태그에 대한 컬럼을 생성
-            col1, col2 = st.columns([3, 1])  # 비율을 조정하여 태그 이름과 삭제 버튼의 크기를 조절
-
-            # 태그를 보여주는 컬럼
+            col1, col2 = st.columns([3, 1])
             with col1:
-                st.markdown(f"**⭐️ {n+1}순위 : {tag}**")
-
-            # 삭제 버튼을 보여주는 컬럼
+                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {tag}**")
             with col2:
-                if st.button("❌", key=f"remove_{tag}"):  # 간단한 아이콘을 사용하여 공간 활용을 최적화
+                if st.button("❌", key=f"remove_{tag}"):
                     ss.selected_tags.remove(tag)
-                    st.rerun()  # 페이지를 재실행하여 변경사항 적용
+                    st.rerun()
 
-            chat_state.selected_tags = ss.selected_tags
+        chat_state.selected_tags = ss.selected_tags
 
-def side_bar():
+def side_bar(eng_flag=False):
     ####### Sidebar #######
     with st.sidebar:
-        st.subheader("Tamla's Flavor_" + VERSION)
+        st.subheader("Tamna's Flavor_" + VERSION)
 
         # chat_state 설정 
         chat_state.selected_age_groups = [list(age_options.keys())[1]]
@@ -393,19 +416,25 @@ def side_bar():
         def clear_chat_history():
             ss.messages = []
         # 대화창 초기화 설명
-        st.write("#### 👇 대화창을 초기화하려면 아래 버튼을 클릭하세요.")
+        if eng_flag:
+            st.write("#### 👇 Click the button below to reset the chat window.")    
+        else:
+            st.write("#### 👇 대화창을 초기화하려면 아래 버튼을 클릭하세요.")
         # 초기화 버튼
         if st.button('Clear Chat History'):
             clear_chat_history()
 
         # 멘트 추가 
-        st.write("#### 👇 아래에서 좋아하는 맛집 특성을 선택하시면, 당신을 위한 맞춤 맛집을 찾아드릴게요! 🌟")
+        if eng_flag:
+            st.write("#### 👇 Select your favorite restaurant characteristics below, and we'll find the perfect spot for you! 🌟")
+        else:
+            st.write("#### 👇 아래에서 좋아하는 맛집 특성을 선택하시면, 당신을 위한 맞춤 맛집을 찾아드릴게요! 🌟")
 
         # 차 여부 
         # car() 
 
         # 식당 테마
-        hashtag()
+        hashtag(eng_flag)
 
         # 성별 설정 
         # gender()
@@ -414,7 +443,7 @@ def side_bar():
         # age()
 
         # 가격대 설정 
-        price()
+        price(eng_flag)
 
         # food_selection
         # food_selection()
@@ -463,12 +492,14 @@ def llm_method_button(eng_flag):
     # chat_input_text = limit_num_characters(chat_input_text + coll_name_as_shown, 35) + "/"
     # full_query = st.chat_input(chat_input_text)    
 
-def questions_recommending():
+def questions_recommending(eng_flag=False):
     if 'clicked_query' not in ss:
         ss.clicked_query = None
 
     # 질문지 생성
     parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
+    if eng_flag:
+        chat_state.flag = "영어로"
     chat_state.update(parsed_query=parsed_query)
     question_lists = get_bot_response(chat_state)
 
@@ -515,11 +546,45 @@ def url_setting(title, addr):
         </div>
         """, unsafe_allow_html=True)
 
+def mode_selection():
+    # 세션 상태에 따라 기본 선택된 모드를 설정
+    if 'selected_mode' not in st.session_state:
+        st.session_state.selected_mode = '일반 추천 모드'
+
+    # 버튼 클릭을 처리하는 함수
+    def select_mode(mode):
+        st.session_state.selected_mode = mode
+
+    with st.expander(f"선택된 모드: {st.session_state.selected_mode}", expanded=True):
+        words = """⏺︎ **일반 추천 모드**: 이 모드에서는 여러 정보를 검색하고, 여러분의 취향과 여행 경로에 맞는 맛집을 빠르게 추천해 드립니다.
+                간단하게 원하는 음식 종류나 스타일을 입력하면, 관련된 맛집을 찾아 추천해 드려요.
+
+                ⏺︎ **집계 모드**: 이 모드에서는 더 심층적인 분석을 통해, 지역 내에서 가장 인기 있는 맛집을 찾아드립니다.
+                여러 데이터를 분석하여 해당 지역에서 어디가 가장 많이 방문되고 사랑받는 곳인지를 알려드리죠.
+                이 방식은 특히 통계와 집계 결과를 바탕으로 한 추천을 선호하는 분들에게 유용해요!
+                """
+        st.markdown(words)
+
+        # 가로 버튼을 생성
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("일반 추천 모드",
+                         key="general_mode", 
+                         help="취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.",
+                         use_container_width=True):
+                select_mode("일반 추천 모드")
+        with col2:
+            if st.button("집계 모드", 
+                         key="aggregate_mode", 
+                         help="지역 내 가장 인기 있는 맛집을 분석하여 추천합니다.",
+                         use_container_width=True):
+                select_mode("집계 모드")
+
+
+
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
-
-    side_bar()
 
     # 로고 이미지 로드
     logo = Image.open("media/탐라logo_w_horizon.png")
@@ -554,6 +619,8 @@ def main():
         if ss.language == "English":
             title_header(logo, "")
             st.title("Welcome to the Culinary Journey with Tamna's Flavor AI!")
+            # Side bar
+            side_bar(True)
             # English content here
             st.markdown(GREETING_MESSAGE_ENG)
             # 날씨, 시간에 따른 인사말 생성 및 저장
@@ -564,7 +631,7 @@ def main():
                 ss.greeting_message = get_bot_response(chat_state)
 
             # 사용자 ID를 포함한 전체 메시지 생성
-            full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id and chat_state.user_id.strip() else ss.greeting_message
+            full_message = f"{chat_state.user_id}, {ss.greeting_message}" if chat_state.user_id and chat_state.user_id.strip() else ss.greeting_message
 
             # 채팅 히스토리에 새 메시지 추가
             if full_message not in [msg for _, msg in chat_state.chat_history]:
@@ -578,8 +645,15 @@ def main():
         else:
             title_header(logo, "")
             st.title("탐라는 맛 AI와 함께하는 미식 여행에 오신 것을 환영합니다!")
+            # Side bar
+            side_bar(False)
             # Korean content here
             st.markdown(GREETING_MESSAGE_KOR)
+            
+            mode_selection()
+
+            st.markdown("어떤 모드를 사용하든, 여러분의 여행이 더욱 특별해질 수 있도록 도와드릴게요. 탐라는 맛 AI와 함께 맛있는 미식 여행을 떠나보세요! 😋")
+
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
                 chat_state.flag = ""
@@ -598,8 +672,6 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat()  
-            
-
 
 if __name__ == '__main__':
     main()  
