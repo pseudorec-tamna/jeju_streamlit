@@ -97,13 +97,21 @@ just_chat_status_config = chat_with_docs_status_config | {
 }
 
 chat_hw_status_config = chat_with_docs_status_config | {
-    "thinking.body": "Composing reply...",
+    "thinking.header": "Selecting the Optimal Agent",
+    "thinking.body": "Identifying the best agent for the query and generating the final response...",
+    "complete.body": "The optimal agent has been selected, and the response is ready.",
 }
 
 chat_sql_status_config = chat_with_docs_status_config | {
     "thinking.header": "Generating SQL Query",
     "thinking.body": "Fetching data from sources and preparing the report...",
     "complete.body": "The report has been successfully generated.",
+}
+
+chat_keyword_status_config = chat_with_docs_status_config | {
+    "thinking.header": "Finding Similar Embeddings",
+    "thinking.body": "Searching for similar data based on embeddings...",
+    "complete.body": "Similarity search completed and results are ready.",
 }
 
 web_status_config = chat_with_docs_status_config | {
@@ -134,6 +142,7 @@ status_config = {
     ChatMode.JUST_CHAT_COMMAND_ID: just_chat_status_config,
     ChatMode.CHAT_HW_ID: chat_hw_status_config,
     ChatMode.SQL_CHAT_ID: chat_sql_status_config, 
+    ChatMode.KEYWORD_CHAT_ID: chat_keyword_status_config
     # ChatMode.CHAT_WITH_DOCS_COMMAND_ID: chat_with_docs_status_config,
     # ChatMode.DETAILS_COMMAND_ID: chat_with_docs_status_config,
     # ChatMode.QUOTES_COMMAND_ID: chat_with_docs_status_config,

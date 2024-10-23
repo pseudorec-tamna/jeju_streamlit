@@ -127,6 +127,8 @@ def open_ai_chat(eng_flag=False):
         mode_id = ChatMode.CHAT_HW_ID
         if chat_state.chat_basic_mode == "aggregate":
             mode_id = ChatMode.SQL_CHAT_ID
+        elif len(chat_state.selected_tags) > 0:
+            mode_id = ChatMode.KEYWORD_CHAT_ID
         parsed_query = parse_query(prompt, predetermined_chat_mode=mode_id)
         chat_state.update(parsed_query=parsed_query)
 
@@ -386,7 +388,25 @@ def hashtag(eng_flag=False):
         h_expander = "식당 해시태그"
         text_tmp = "나만의 해시태그 추가"
 
-    with st.expander(h_expander, expanded=False):
+    # hashtags_mapping의 value를 key로 하고 key를 value로 하는 역매핑 생성
+    reverse_hashtags_mapping = {v: k for k, v in hashtags_mapping.items()}
+
+    with st.expander(h_expander, expanded=True):
+        # 선택된 태그 상태 관리
+        if 'selected_tags' not in ss:
+            ss.selected_tags = []
+        
+        # 선택된 태그 표시 및 관리
+        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
+        for n, tag in enumerate(ss.selected_tags):
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {reverse_hashtags_mapping.get(tag,tag)}**")
+            with col2:
+                if st.button("❌", key=f"remove_{reverse_hashtags_mapping.get(tag,tag)}"):
+                    ss.selected_tags.remove(tag)
+                    st.rerun()
+
         # 사용자 정의 태그 입력
         custom_tag = st.text_input(text_tmp, placeholder="#맛집" if not eng_flag else "#BestRestaurant", key="custom_tag")
         add_button = st.button("추가" if not eng_flag else "Add", key="add_tag")
@@ -394,37 +414,31 @@ def hashtag(eng_flag=False):
             custom_tag = "#" + custom_tag
         if add_button and custom_tag:
             if custom_tag not in ss.hashtags:
-                ss.hashtags.append(hashtags_mapping(custom_tag))
+                ss.hashtags.append(custom_tag)
                 st.success(f"{custom_tag} {'추가됨!' if not eng_flag else 'added!'}")
-                print(custom_tag)
 
-        # 선택된 태그 상태 관리
-        if 'selected_tags' not in ss:
-            ss.selected_tags = []
-        
         # 해시태그 버튼 생성
         cols = st.columns(3)
         for i, tag in enumerate(ss.hashtags):
             if cols[i % 3].button(tag, key=f"tag_{i}"):
-                if tag in ss.selected_tags:
-                    ss.selected_tags.remove(hashtags_mapping(custom_tag))
+                if hashtags_mapping.get(tag, tag) in ss.selected_tags:
+                    ss.selected_tags.remove(hashtags_mapping.get(tag, tag))
                 elif len(ss.selected_tags) < 3:
-                    ss.selected_tags.append(hashtags_mapping(tag))
+                    ss.selected_tags.append(hashtags_mapping.get(tag, tag))
                 else:
                     st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
 
-        # 선택된 태그 표시 및 관리
-        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
-        for n, tag in enumerate(ss.selected_tags):
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {tag}**")
-            with col2:
-                if st.button("❌", key=f"remove_{tag}"):
-                    ss.selected_tags.remove(hashtags_mapping(custom_tag))
-                    st.rerun()
-
         chat_state.selected_tags = ss.selected_tags
+        if len(chat_state.selected_tags) > 0 :
+            # Append chat history when user_id changes
+            chat_state.chat_history.append(
+                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(chat_state.selected_tags))
+            )
+            chat_state.chat_history_all.append(
+                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(chat_state.selected_tags))
+            )
+
+        print(chat_state.selected_tags)
 
 def side_bar(eng_flag=False):
     ####### Sidebar #######
@@ -456,7 +470,8 @@ def side_bar(eng_flag=False):
         if eng_flag:
             st.write("#### 👇 Select your favorite restaurant characteristics below, and we'll find the perfect spot for you! 🌟")
         else:
-            st.write("#### 👇 아래에서 좋아하는 맛집 특성을 선택하시면, 당신을 위한 맞춤 맛집을 찾아드릴게요! 🌟")
+            st.write("#### 👇 아래에서 좋아하는 맛집 특성을 선택하시면, 당신을 위한 맞춤 맛집을 찾아드릴게요! 🌟 ")
+            st.write("(일반 추천 모드에서만 사용 가능합니다.)")
 
         # 차 여부 
         # car() 
@@ -471,7 +486,7 @@ def side_bar(eng_flag=False):
         # age()
 
         # 가격대 설정 
-        price(eng_flag)
+        # price(eng_flag)
 
         # food_selection
         # food_selection()

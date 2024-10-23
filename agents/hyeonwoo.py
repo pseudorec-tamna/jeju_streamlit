@@ -232,8 +232,8 @@ def get_hw_response(chat_state: ChatState):
         
     # elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
         rec = None # 변수 초기화
-        print(f"추천 타입:{json_format(response)["response_type"]}")
-        print(f"추천 요소:{json_format(response)["recommendation_factors"]}")
+        print(f"추천 타입:{json_format(response)['response_type']}")
+        print(f"추천 요소:{json_format(response)['recommendation_factors']}")
         menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
         location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
         keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
@@ -353,7 +353,7 @@ def get_hw_response(chat_state: ChatState):
     #     pass 
     print(f"답변 타입:{response_type}")
     print('여기서의 응답', result)
-    response = {"answer": result, 'title': rec[0].metadata['name'], 'address': rec[0].metadata['full_location']}
+    response = {"answer": result, 'title': rec['recommendation']['MCT_NM'].iloc[0], 'address': rec['recommendation']['ADDR'].iloc[0]}
     print('응답', response)
 
     return response

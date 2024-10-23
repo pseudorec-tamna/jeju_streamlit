@@ -27,6 +27,7 @@ class ChatMode(Enum):
     CHAT_HW_ID=1    
     CHAT_QUESTION_ID=2
     SQL_CHAT_ID = 3
+    KEYWORD_CHAT_ID = 4
     JUST_CHAT_COMMAND_ID = 6
     JUST_CHAT_GREETING_ID = 7
     

@@ -734,6 +734,62 @@ recommendation_keyword_prompt_template = ChatPromptTemplate.from_messages([
     ("human", "{question}"),
 ])
 
+
+recommendation_keyword_template_chat2 = '''
+GOAL:
+* You are a bot that generates recommendation responses based on the retrieved information that matches the user's original question.
+* The following data has been ranked to extract the most relevant results for the user's query.
+* Please create a recommendation response based on this information.
+
+IMPORTANCE:
+* If the recommended store has already been suggested in a previous conversation, show the next in line.
+* Make sure to generate the response in Korean.
+* If no data is available, state that there is no data.
+* Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
+* Never lie or make up information that doesn't exist.
+* "탐라는맛 화이팅!!" comment has to be in the last of the response.
+* 'FEATURES INFO'가 None이 아니라면, 사용자에게 응답할 때 'FEATURES INFO'가 있고, 이를 기반으로 추천해주겠다고 항상 먼저 언급하세요. 
+* 'FEATURES INFO'와 관련된 정보를 제공하거나 이에 대해 참조할 필요가 있을 때는 이를 적절히 포함하도록 하세요. 
+
+FEATURES INFO:
+{selected_tags}
+
+OUTPUT FORMAT:
+ 가게명: The name of the restaurant
+ 업종: The business type
+ 대표 메뉴: The main menu
+ 주소: Address, full_location
+ 영업시간: Business hours
+ 예약 유무: Reservation required or not
+ 주차 유무: Parking available or not
+ 추천 이유: Reason for recommendation:
+
+USER's QUESTION:
+서귀포에 흑돼지 맛집 추천해줘
+
+RECOMMENDED DOCUMENTS:
+metadata={{'average_price': '21285', 'average_score': '4.59', 'companion_info': '연인, 가족, 친구, 부모님과의 방문에 적합하며, 아이들과 함께 방문하기에도 좋은 곳입니다.', 'feature_info': "['특징', '맛::464', '만족도::298', '서비스::177', '위치::25', '음식량::21', '메뉴::14', '청결도::14', '분위기::13', '목적::12', '가격::9', '주차::8', '전망::4', '대기시간::4', '예약::2']", 'full_location': '제주 제주시 한림읍 협재리 2447-41번지 1층', 'location': '제주시 한림읍', 'menu_info': "['고기::291', '흑돼지::87', '찌개::64', '김치찌개::50', '등심::46', '목살::46', '오겹살::41', '막국수::26', '된장찌개::17', '돼지고기::14', '명이나물::13', '가브리살::11', '항정살::10', '치즈::10', '삼겹살::9']", 'name': '감성돈', 'payment_method': "['지역화폐 (카드형)']", 'reservation_info': '낮음. 대부분의 경우 예약 없이 방문 가능하지만, 특히 주말이나 저녁 시간대에는 예약을 하는 것이 좋습니다.', 'review_counts': '903', 'review_summary': '숙성된 흑돼지 전문점으로, 육즙 가득한 고기와 맛있는 밑반찬이 인기입니다. 특히 직원들의 친절한 서비스와 쾌적한 매장 환경이 장점으로 꼽힙니다.', 'revisit_info': '높음. 고기 맛과 서비스에 대한 만족도가 높아 재방문 의사를 밝히는 고객들이 많습니다.', 'type': '가정식', 'waiting_info': '대기 시간은 대부분 짧거나 바로 입장 가능하며, 웨이팅이 발생하더라도 10분 이내로 끝나는 경우가 많습니다.'}}, page_content="name:감성돈, \n      review_summary:숙성된 흑돼지 전문점으로, 육즙 가득한 고기와 맛있는 밑반찬이 인기입니다. 특히 직원들의 친절한 서비스와 쾌적한 매장 환경이 장점으로 꼽힙니다.,\n      full_location:제주 제주시 한림읍 협재리 2447-41번지 1층, \n      location:제주시 한림읍, \n      average_score:4.59, \n      average_price:21285,\n      payment_method:['지역화폐 (카드형)'], \n      review_counts: 903,\n      menu_info:['고기::291', '흑돼지::87', '찌개::64', '김치찌개::50', '등심::46', '목살::46', '오겹살::41', '막국수::26', '된장찌개::17', '돼지고기::14', '명이나물::13', '가브리살::11', '항정살::10', '치즈::10', '삼겹살::9'], \n      feature_info:['특징', '맛::464', '만족도::298', '서비스::177', '위치::25', '음식량::21', '메뉴::14', '청결도::14', '분위기::13', '목적::12', '가격::9', '주차::8', '전망::4', '대기시간::4', '예약::2'],\n      revisit_info:높음. 고기 맛과 서비스에 대한 만족도가 높아 재방문 의사를 밝히는 고객들이 많습니다.,\n      reservation_info:낮음. 대부분의 경우 예약 없이 방문 가능하지만, 특히 주말이나 저녁 시간대에는 예약을 하는 것이 좋습니다.,\n      companion_info:연인, 가족, 친구, 부모님과의 방문에 적합하며, 아이들과 함께 방문하기에도 좋은 곳입니다.,\n      waiting_info:대기 시간은 대부분 짧거나 바로 입장 가능하며, 웨이팅이 발생하더라도 10분 이내로 끝나는 경우가 많습니다.,\n      type: 가정식\n      ")
+
+OUTPUT:
+서귀포의 흑돼지 하면 "감성돈"이죠!
+숙성된 흑돼지 전문점으로, 육즙 가득한 고기와 맛있는 밑반찬이 인기입니다. 특히 직원들의 친절한 서비스와 쾌적한 매장 환경이 장점으로 꼽힙니다.
+
+USER's QUESTION:
+{question}
+
+RECOMMENDED DOCUMENTS:
+{recommendations}
+
+OUTPUT:
+'''
+
+recommendation_keyword_prompt_template2 = ChatPromptTemplate.from_messages([
+    ("system", recommendation_keyword_template_chat2),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{question}"),
+])
+
+
 multi_turn_chat = '''
 GOAL:
 * You need to collect additional information to make a recommendation based on the given data.
