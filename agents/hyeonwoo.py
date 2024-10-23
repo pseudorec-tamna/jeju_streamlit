@@ -233,113 +233,113 @@ def get_hw_response(chat_state: ChatState):
     #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm
     #     result = chain.invoke({"question": chat_state.message})
         
-    elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
+    # elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
         rec = None # 변수 초기화
-        print(f"추천 타입:{json_format(response)["recommendation_type"]}")
+        print(f"추천 타입:{json_format(response)["response_type"]}")
         print(f"추천 요소:{json_format(response)["recommendation_factors"]}")
         menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
         location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
         keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
         business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']
-        if json_format(response)["recommendation_type"] == "Distance-based":
-            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm | StrOutputParser()
-            coord = get_coordinates_by_question(chat_state.message)
-            st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
-            print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
+    if json_format(response)["response_type"] == "Distance-based":
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm | StrOutputParser()
+        coord = get_coordinates_by_question(chat_state.message)
+        st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
+        print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
 
-            # from IPython.display import IFrame
-            latitude, longitude = coord  # coord에서 위도와 경도 추출
-            # display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
-            st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
+        # from IPython.display import IFrame
+        latitude, longitude = coord  # coord에서 위도와 경도 추출
+        # display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
+        st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
+        
+        while True: 
+            response = requests.get('http://127.0.0.1:5000/get_coordinates')
+            coordinates = response.json()
+            latitude = coordinates['latitude']
+            longitude = coordinates['longitude']
             
-            while True: 
-                response = requests.get('http://127.0.0.1:5000/get_coordinates')
-                coordinates = response.json()
-                latitude = coordinates['latitude']
-                longitude = coordinates['longitude']
-                
-                print(latitude)
-                print(longitude)
-                if latitude is not None and longitude is not None:
-                    break
-                time.sleep(5)
-            
-            rec = coordinates_based_recommendation((longitude, latitude), df)
-            print('여기 조사', rec)
-            rec = rec.reset_index()
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
+            print(latitude)
+            print(longitude)
+            if latitude is not None and longitude is not None:
+                break
+            time.sleep(5)
+        
+        rec = coordinates_based_recommendation((longitude, latitude), df)
+        print('여기 조사', rec)
+        rec = rec.reset_index()
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
 
-            chat_state.info_menuplace = ['']
-            chat_state.info_location = ''
-            chat_state.info_keyword = ['']
-            chat_state.info_business_type = ['']
-            return {'answer': result, 'title': rec['MCT_NM'][0], 'address': rec['ADDR'][0]}
-        elif json_format(response)["recommendation_type"] == "Attribute-based":
-            return {'answer': nope, 'title':'', 'address': ''}
-        #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
-        #     sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
-        #     sql_chain = sql_prompt | llm 
-        #     output = sql_chain.invoke({"question": chat_state.message})
-        #     rec = sql_based_recommendation(output, df_quan)
-        #     print('attribute 응답:', rec)
-        #     rec_df = rec['recommendation'].reset_index()
-        #     result = chain.invoke({"question": chat_state.message, "recommendations": rec_df['MCT_NM'][0]})
+        chat_state.info_menuplace = ['']
+        chat_state.info_location = ''
+        chat_state.info_keyword = ['']
+        chat_state.info_business_type = ['']
+        return {'answer': result, 'title': rec['MCT_NM'][0], 'address': rec['ADDR'][0]}
+    elif json_format(response)["response_type"] == "Attribute-based":
+        return {'answer': 'nope', 'title':'', 'address': ''}
+    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
+    #     sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
+    #     sql_chain = sql_prompt | llm 
+    #     output = sql_chain.invoke({"question": chat_state.message})
+    #     rec = sql_based_recommendation(output, df_quan)
+    #     print('attribute 응답:', rec)
+    #     rec_df = rec['recommendation'].reset_index()
+    #     result = chain.invoke({"question": chat_state.message, "recommendations": rec_df['MCT_NM'][0]})
 
-        #     chat_state.info_menuplace = ['']
-        #     chat_state.info_location = ''
-        #     chat_state.info_keyword = ['']
-        #     chat_state.info_business_type = ['']
-        #     return {'answer': result, 'title': rec['recommendation']['MCT_NM'][0], 'address': rec.iloc[0]['ADDR']}
-        elif json_format(response)["recommendation_type"] == "Keyword-based":
-            print('\n\n\n\n호출됐음\n\n\n\n')
-            retrieved = df[df['ADDR_detail'].str.contains(location)]
+    #     chat_state.info_menuplace = ['']
+    #     chat_state.info_location = ''
+    #     chat_state.info_keyword = ['']
+    #     chat_state.info_business_type = ['']
+    #     return {'answer': result, 'title': rec['recommendation']['MCT_NM'][0], 'address': rec.iloc[0]['ADDR']}
+    elif json_format(response)["response_type"] == "Keyword-based":
+        print('\n\n\n\n호출됐음\n\n\n\n')
+        retrieved = df[df['ADDR_detail'].str.contains(location)]
+        if len(retrieved) == 0:
+            retrieved = df[df['MCT_NM'].str.contains(location)]
             if len(retrieved) == 0:
-                retrieved = df[df['MCT_NM'].str.contains(location)]
-                if len(retrieved) == 0:
-                    retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
-            filtered_location = retrieved['ADDR_detail'].unique()
-            filtered_business_type = business_type
-            hugging_retriever = hugging_vectorstore.as_retriever(
-                search_type='similarity',
-                search_kwargs={
-                    'filter': {
-                        "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"busyness_type":business}for business in filtered_business_type]
-                    }
+                retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
+        filtered_location = retrieved['ADDR_detail'].unique()
+        filtered_business_type = business_type
+        hugging_retriever = hugging_vectorstore.as_retriever(
+            search_type='similarity',
+            search_kwargs={
+                'filter': {
+                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"busyness_type":business}for business in filtered_business_type]
                 }
-            )
-            row = []
-            docs = hugging_retriever.invoke(chat_state.message)
-            for doc in docs:
-                row.append(doc.metadata)
-            rec = pd.DataFrame(row).reset_index()
-            print('키워드 추천 문서:', rec.iloc[0])
-            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0]})
-            
-            chat_state.info_menuplace = ['']
-            chat_state.info_location = ''
-            chat_state.info_keyword = ['']
-            chat_state.info_business_type = ['']
-            return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
-        elif json_format(response)["recommendation_type"] == "Multi-turn":
-            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_template | llm | StrOutputParser()
-            print(f"location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
-            result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
-            return {'answer': result, 'title': '', 'address': ''}
-        else: 
-            pass 
+            }
+        )
+        row = []
+        docs = hugging_retriever.invoke(chat_state.message)
+        for doc in docs:
+            row.append(doc.metadata)
+        rec = pd.DataFrame(row).reset_index()
+        print('키워드 추천 문서:', rec.iloc[0])
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0]})
+        
+        chat_state.info_menuplace = ['']
+        chat_state.info_location = ''
+        chat_state.info_keyword = ['']
+        chat_state.info_business_type = ['']
+        return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
+    elif json_format(response)["response_type"] == "Multi-turn":
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_template | llm | StrOutputParser()
+        print(f"location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
+        result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
+        return {'answer': result, 'title': '', 'address': ''}
+    else: 
+        pass 
         
         # 수정 필요 사항
         # 추천 기능별 rec 파일 규격 통일
         # docs 에 id 값 추가하고 rec 규격에 맞게 rec 파일 추출하기
         # next_rec을 결과로 출력할 수 있게 프롬프트 또는 response return 값 수정(?)
         # - TOP1 결과에 대해서만 제공, next_rec 값이 None인 경우도 있음 (방문이력X)
-        next_rec = None
-        if isinstance(rec, pd.DataFrame):
-            id_t = df[df.MCT_NM==rec.iloc[0].MCT_NM].id.values[0]
-            if id_t in transition_matrix_df.index:
-                next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
-        print(f'--------------\n\nnextrec:{next_rec}\n\n\n--------------')
+    next_rec = None
+    if isinstance(rec, pd.DataFrame):
+        id_t = df[df.MCT_NM==rec.iloc[0].MCT_NM].id.values[0]
+        if id_t in transition_matrix_df.index:
+            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
+    print(f'--------------\n\nnextrec:{next_rec}\n\n\n--------------')
         
     # elif response_type == "Item Detail Search":
     #     # SQL 문으로 검색 가능하도록 
@@ -354,19 +354,19 @@ def get_hw_response(chat_state: ChatState):
     #         "tel": item_info["tel"],
     #         "booking": item_info["booking"]
     #         })
-    elif response_type == "Explanation":
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | explanation_template | llm | StrOutputParser()
-        item_info = df.loc[df["MCT_NM"] == str(chat_state.message)].reset_index(drop=True)
-        print("item_info:", item_info)
-        result = chain.invoke({
-            "question": chat_state.message,
-            "MCT_NM": item_info["MCT_NM"],
-            "ADDR": item_info["ADDR"],
-            "tel": item_info["tel"],
-            "booking": item_info["booking"]
-            })
-    else:
-        pass 
+    # elif response_type == "Explanation":
+    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | explanation_template | llm | StrOutputParser()
+    #     item_info = df.loc[df["MCT_NM"] == str(chat_state.message)].reset_index(drop=True)
+    #     print("item_info:", item_info)
+    #     result = chain.invoke({
+    #         "question": chat_state.message,
+    #         "MCT_NM": item_info["MCT_NM"],
+    #         "ADDR": item_info["ADDR"],
+    #         "tel": item_info["tel"],
+    #         "booking": item_info["booking"]
+    #         })
+    # else:
+    #     pass 
     print(f"답변 타입:{response_type}")
     print('여기서의 응답', result)
     response = {"answer": result}
