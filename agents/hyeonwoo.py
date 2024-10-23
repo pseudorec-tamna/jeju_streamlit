@@ -266,26 +266,30 @@ def get_hw_response(chat_state: ChatState):
             
             rec = coordinates_based_recommendation((longitude, latitude), df)
             print('여기 조사', rec)
+            rec = rec.reset_index()
             result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
 
             chat_state.info_menuplace = ['']
             chat_state.info_location = ''
             chat_state.info_keyword = ['']
             chat_state.info_business_type = ['']
-        
+            return {'answer': result, 'title': rec['MCT_NM'][0], 'address': rec['ADDR'][0]}
         elif json_format(response)["recommendation_type"] == "Attribute-based":
-            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
-            sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
-            sql_chain = sql_prompt | llm 
-            output = sql_chain.invoke({"question": chat_state.message})
-            rec = sql_based_recommendation(output, df_quan)
-            print('attribute 응답:', rec)
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec, "search_info": output.content})
+            return {'answer': nope, 'title':'', 'address': ''}
+        #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
+        #     sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
+        #     sql_chain = sql_prompt | llm 
+        #     output = sql_chain.invoke({"question": chat_state.message})
+        #     rec = sql_based_recommendation(output, df_quan)
+        #     print('attribute 응답:', rec)
+        #     rec_df = rec['recommendation'].reset_index()
+        #     result = chain.invoke({"question": chat_state.message, "recommendations": rec_df['MCT_NM'][0]})
 
-            chat_state.info_menuplace = ['']
-            chat_state.info_location = ''
-            chat_state.info_keyword = ['']
-            chat_state.info_business_type = ['']
+        #     chat_state.info_menuplace = ['']
+        #     chat_state.info_location = ''
+        #     chat_state.info_keyword = ['']
+        #     chat_state.info_business_type = ['']
+        #     return {'answer': result, 'title': rec['recommendation']['MCT_NM'][0], 'address': rec.iloc[0]['ADDR']}
         elif json_format(response)["recommendation_type"] == "Keyword-based":
             print('\n\n\n\n호출됐음\n\n\n\n')
             retrieved = df[df['ADDR_detail'].str.contains(location)]
@@ -303,20 +307,25 @@ def get_hw_response(chat_state: ChatState):
                     }
                 }
             )
+            row = []
             docs = hugging_retriever.invoke(chat_state.message)
-            print('키워드 추천 문서:', docs[0])
+            for doc in docs:
+                row.append(doc.metadata)
+            rec = pd.DataFrame(row).reset_index()
+            print('키워드 추천 문서:', rec.iloc[0])
             chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-            result = chain.invoke({"question": chat_state.message, "recommendations": docs[0]})
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0]})
             
             chat_state.info_menuplace = ['']
             chat_state.info_location = ''
             chat_state.info_keyword = ['']
             chat_state.info_business_type = ['']
+            return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
         elif json_format(response)["recommendation_type"] == "Multi-turn":
             chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_template | llm | StrOutputParser()
             print(f"location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
             result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
-
+            return {'answer': result, 'title': '', 'address': ''}
         else: 
             pass 
         
