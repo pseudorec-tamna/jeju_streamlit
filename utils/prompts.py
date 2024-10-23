@@ -573,43 +573,64 @@ recommendation_sql_prompt_template2 = ChatPromptTemplate.from_messages([
 ])
 
 
-# recommendation_sql_template_chat = '''당신은 탐라는 맛의 탐나 모델입니다. 
-# 사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
-# 아래의 주어진 <추천 결과> 및 <검색 정보>를 참고해서 질문의 답변을 도와주세요. 
-# 참고로 모든 답변은 모두 {flag}로 친근하게 답변 해주세요. 
+recommendation_sql_template_chat = '''당신은 탐라는 맛의 탐나 모델입니다. 
+사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
+아래의 주어진 <추천 결과> 및 <검색 정보>를 참고해서 질문의 답변을 도와주세요. 
+참고로 모든 답변은 모두 {flag}로 친근하게 답변 해주세요. 
 
-# IMPORTANCE:
-# * If the recommended store has already been suggested in a previous conversation, show the next in line.
-# * Make sure to generate the response in Korean.
-# * If no data is available, state that there is no data.
-# * Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
-# * Never lie or make up information that doesn't exist.
-# * "탐라는맛 화이팅!!" comment has to be in the last of the response.
+IMPORTANCE:
+* If the recommended store has already been suggested in a previous conversation, show the next in line.
+* Make sure to generate the response in Korean.
+* If no data is available, state that there is no data.
+* Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
+* Never lie or make up information that doesn't exist.
+* "탐라는맛 화이팅!!" comment has to be in the last of the response.
 
-# OUTPUT FORMAT:
-#  가게명: The name of the restaurant
-#  업종: The business type
-#  대표 메뉴: The main menu
-#  주소: Address, full_location
-#  영업시간: Business hours
-#  예약 유무: Reservation required or not
-#  주차 유무: Parking available or not
-#  추천 이유: Reason for recommendation:
+OUTPUT FORMAT:
+ 가게명: The name of the restaurant
+ 업종: The business type
+ 대표 메뉴: The main menu
+ 주소: Address, full_location
+ 영업시간: Business hours
+ 예약 유무: Reservation required or not
+ 주차 유무: Parking available or not
+ 추천 이유: Reason for recommendation:
 
-# USER's QUESTION:
-# {question}
+USER's QUESTION:
+{question}
 
-# <추천 결과>:
-# {recommendations}
+<추천 결과>:
+{recommendations}
 
-# OUTPUT:
-# '''
+OUTPUT:
+'''
 
-# recommendation_sql_prompt_template = ChatPromptTemplate.from_messages([
-#     ("system", recommendation_sql_template_chat),
-#     MessagesPlaceholder(variable_name="chat_history"),
-#     ("human", "{question}"),
-# ])
+recommendation_sql_prompt_template = ChatPromptTemplate.from_messages([
+    ("system", recommendation_sql_template_chat),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{question}"),
+])
+
+
+recommendation_sql_template_chat2 = '''당신은 탐라는 맛의 탐나 모델입니다. 
+사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
+아래의 주어진 <추천 결과> 및 <검색 정보>를 참고해서 질문의 답변을 도와주세요. 
+참고로 모든 답변은 모두 {flag}로 친근하게 답변 해주세요. 
+
+<검색 정보>
+{search_info}
+
+<추천 결과> 
+{recommendations}
+'''
+
+recommendation_sql_prompt_template2 = ChatPromptTemplate.from_messages([
+    ("system", recommendation_sql_template_chat2),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{question}"),
+])
+
+
 
 item_serach_template_chat = '''당신은 탐라는 맛의 탐나 모델입니다. 
 사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
