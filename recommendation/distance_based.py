@@ -38,8 +38,11 @@ def get_coordinates_by_nominatim(address):
         n += 1 
         if n > 3: break
     print('get_coordinates_by_nominatim함수')
-    return (location.longitude, location.latitude)
-
+    if location is not None:
+        return (location.longitude, location.latitude)
+    else:
+        print('distance - location 확인안됨')
+        return (0,0)
 # 카카오 주소 추출 
 import requests
 def get_keyword(query):
@@ -163,21 +166,23 @@ def distance_based_recommendation(question, df):
         "Final Region:", _region,
         "coords:", coords
     )
-    # 3. 모든 맛집들의 좌표와 거리 계산
-    rec = recommend_restaurant_by_distance(coords, df).reset_index(drop=True)
-    rec = rec.loc[0]
-    print(
-        "Recommendation Result:", rec
-    )
-    total_minutes = find_path(start_coords=coords, end_coords=(rec.long, rec.lat))["result"]["path"][0]["info"]["totalTime"]
-    distance_info = {
-        "대중교통": str(total_minutes) + "분",
-    }
-    return {
-        "recommendation": rec,
-        "distance_info": distance_info
-    }
-
+    if coords != (0,0):
+        # 3. 모든 맛집들의 좌표와 거리 계산
+        rec = recommend_restaurant_by_distance(coords, df).reset_index(drop=True)
+        rec = rec.loc[0]
+        print(
+            "Recommendation Result:", rec
+        )
+        total_minutes = find_path(start_coords=coords, end_coords=(rec.long, rec.lat))["result"]["path"][0]["info"]["totalTime"]
+        distance_info = {
+            "대중교통": str(total_minutes) + "분",
+        }
+        return {
+            "recommendation": rec,
+            "distance_info": distance_info
+        }
+    else:
+        pass
 def get_coordinates_by_question(question):
     region = region_detection(question)
     response = get_keyword(region)
