@@ -100,6 +100,12 @@ chat_hw_status_config = chat_with_docs_status_config | {
     "thinking.body": "Composing reply...",
 }
 
+chat_sql_status_config = chat_with_docs_status_config | {
+    "thinking.header": "Generating SQL Query",
+    "thinking.body": "Fetching data from sources and preparing the report...",
+    "complete.body": "The report has been successfully generated.",
+}
+
 web_status_config = chat_with_docs_status_config | {
     "thinking.header": "Doing Internet research (takes 10-30s)...",
     "thinking.body": "Retrieving content from websites and composing report...",
@@ -127,6 +133,7 @@ summarize_status_config = chat_with_docs_status_config | {
 status_config = {
     ChatMode.JUST_CHAT_COMMAND_ID: just_chat_status_config,
     ChatMode.CHAT_HW_ID: chat_hw_status_config,
+    ChatMode.SQL_CHAT_ID: chat_sql_status_config, 
     # ChatMode.CHAT_WITH_DOCS_COMMAND_ID: chat_with_docs_status_config,
     # ChatMode.DETAILS_COMMAND_ID: chat_with_docs_status_config,
     # ChatMode.QUOTES_COMMAND_ID: chat_with_docs_status_config,

@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from utils.prepare import (
     get_logger,
-    GEMINI_API_KEY
+    hashtags_mapping
 )
 from utils.query_parsing import parse_query
 from components.llm import CallbackHandlerDDGStreamlit
@@ -87,11 +87,23 @@ if "chat_state" not in ss:
 
 chat_state: ChatState = ss.chat_state
 
+
+# 스크롤 자동화용 자바스크립트 삽입
+def scroll_to_bottom():
+    components.html(
+        """
+        <script>
+            window.scrollTo(0,document.body.scrollHeight);
+        </script>
+        """,
+        height=0
+    )
+
 def open_ai_chat(eng_flag=False):
     # 채팅창 생성
     if "messages" not in ss:
         ss.messages = []
-
+    
     # 기존 메시지 표시
     for message in ss.messages:
         with st.chat_message(message["role"], avatar=message.get("avatar")):
@@ -112,7 +124,10 @@ def open_ai_chat(eng_flag=False):
 
     if prompt := temp_prompt:
         # Parse the query or get the next scheduled query, if any
-        parsed_query = parse_query(prompt, predetermined_chat_mode=ChatMode.CHAT_HW_ID)
+        mode_id = ChatMode.CHAT_HW_ID
+        if chat_state.chat_basic_mode == "aggregate":
+            mode_id = ChatMode.SQL_CHAT_ID
+        parsed_query = parse_query(prompt, predetermined_chat_mode=mode_id)
         chat_state.update(parsed_query=parsed_query)
 
         ss.messages.append({"role": "user", "content": prompt})
@@ -157,12 +172,14 @@ def open_ai_chat(eng_flag=False):
             # Add the response to the chat history
             chat_state.chat_history.append((prompt, answer))
             # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-            message_placeholder.markdown(fix_markdown(answer))
+            message_placeholder.markdown(answer) # fix_markdown
             if info_box:
                 st.markdown(info_box, unsafe_allow_html=True)
 
         # Assistant 메시지와 info_box를 함께 추가 (HTML 포함)
         ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box}"})
+        # 페이지 마지막으로 스크롤 자동화
+        scroll_to_bottom()
         # 페이지 새로고침
         st.rerun()
     # else:
@@ -377,21 +394,22 @@ def hashtag(eng_flag=False):
             custom_tag = "#" + custom_tag
         if add_button and custom_tag:
             if custom_tag not in ss.hashtags:
-                ss.hashtags.append(custom_tag)
+                ss.hashtags.append(hashtags_mapping(custom_tag))
                 st.success(f"{custom_tag} {'추가됨!' if not eng_flag else 'added!'}")
+                print(custom_tag)
 
         # 선택된 태그 상태 관리
-        if 'selected_tags' not in st.session_state:
+        if 'selected_tags' not in ss:
             ss.selected_tags = []
-
+        
         # 해시태그 버튼 생성
         cols = st.columns(3)
-        for i, tag in enumerate(st.session_state.hashtags):
+        for i, tag in enumerate(ss.hashtags):
             if cols[i % 3].button(tag, key=f"tag_{i}"):
-                if tag in st.session_state.selected_tags:
-                    st.session_state.selected_tags.remove(tag)
-                elif len(st.session_state.selected_tags) < 3:
-                    st.session_state.selected_tags.append(tag)
+                if tag in ss.selected_tags:
+                    ss.selected_tags.remove(hashtags_mapping(custom_tag))
+                elif len(ss.selected_tags) < 3:
+                    ss.selected_tags.append(hashtags_mapping(tag))
                 else:
                     st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
 
@@ -403,7 +421,7 @@ def hashtag(eng_flag=False):
                 st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {tag}**")
             with col2:
                 if st.button("❌", key=f"remove_{tag}"):
-                    ss.selected_tags.remove(tag)
+                    ss.selected_tags.remove(hashtags_mapping(custom_tag))
                     st.rerun()
 
         chat_state.selected_tags = ss.selected_tags
@@ -474,7 +492,7 @@ def title_header(logo, title):
         with col2:
             # 두 번째 열에 제목 텍스트 표시
             st.markdown(f"# {title}")  # 큰 글씨로 제목 표시
-        
+
 def format_robot_response(message):
     return f'''<div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffb74d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #e65100; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-size: 16px;">
         <strong>🍊:</strong> {message} </div>'''
@@ -548,7 +566,7 @@ def url_setting(title, addr):
                 </a>
             </div>
         """
-
+    
     # 최종 HTML을 Markdown에 적용
     info_box = f"""
         <div style="border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:0px;">
@@ -566,43 +584,44 @@ def url_setting(title, addr):
 def mode_selection():
     # 세션 상태에 따라 기본 선택된 모드를 설정
     if 'selected_mode' not in ss:
-        ss.selected_mode = '일반 추천 모드'
+        ss.selected_mode = 'general'
+        chat_state.chat_basic_mode = 'general'
 
     # 버튼 클릭을 처리하는 함수
     def select_mode(mode):
-        ss.selected_mode = mode
-        chat_state.chat_mode = mode  # 선택된 모드에 따라 chat_state 업데이트
+        if ss.selected_mode != mode:
+            ss.selected_mode = mode
+            chat_state.chat_basic_mode = mode  # 선택된 모드에 따라 chat_state 업데이트
+            st.rerun()
 
-    # 모드를 선택하는 영역을 생성
-    with st.expander(f"선택된 모드: {st.session_state.selected_mode}", expanded=True):
+    # 모드를 선택하는 영역을 생성 ⏺︎ 
+    tmp_mode = "일반 추천 모드" if st.session_state.selected_mode=="general" else "집계 모드"
+    with st.expander(f"**선택된 모드: {tmp_mode}**", expanded=True):
         st.markdown(
             """
             **🔍 모드를 선택하여 맞춤형 맛집 추천을 받으세요!**
 
-            - ⏺︎ **일반 추천 모드**: 다양한 정보를 기반으로 취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.
-            - ⏺︎ **집계 모드**: 인기 데이터를 분석하여 지역에서 가장 방문 빈도가 높은 맛집을 추천합니다.
+            - **일반 추천 모드**: 다양한 정보를 기반으로 취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.
+            - **집계 모드**: 인기 데이터를 분석하여 지역에서 가장 방문 빈도가 높은 맛집을 추천합니다.
             """
         )
-
+        
         # 버튼을 가로로 배치 (컬럼 사용)
         col1, col2 = st.columns([1, 1], gap="medium")
         with col1:
             if st.button("일반 추천 모드",
                          key="general_mode", 
-                         help="취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.",
-                         use_container_width=True,
-                         type="primary" if st.session_state.selected_mode == "일반 추천 모드" else "secondary"):
-                select_mode("일반 추천 모드")
+                         use_container_width=True):
+                select_mode("general")
         with col2:
             if st.button("집계 모드", 
                          key="aggregate_mode", 
-                         help="지역 내 가장 인기 있는 맛집을 분석하여 추천합니다.",
-                         use_container_width=True,
-                         type="primary" if st.session_state.selected_mode == "집계 모드" else "secondary"):
-                select_mode("집계 모드")
+                         use_container_width=True):
+                select_mode("aggregate")
 
     # 선택된 모드를 표시
-    st.markdown(f"**현재 선택된 모드**: {st.session_state.selected_mode}")
+    # st.markdown(f"**현재 선택된 모드**: {st.session_state.selected_mode}")
+
 
 
 def main():
@@ -652,7 +671,7 @@ def main():
             st.markdown(GREETING_MESSAGE_ENG)
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
-                chat_state.flag = "영어로"                 
+                # chat_state.flag = "영어로"                 
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
@@ -683,7 +702,7 @@ def main():
 
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
-                chat_state.flag = ""
+                chat_state.flag = "한국어로"
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)

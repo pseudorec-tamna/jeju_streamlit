@@ -7,16 +7,6 @@ from utils.log import setup_logging
 
 load_dotenv(override=True)
 
-# Import chromadb while making it think sqlite3 has a new enough version.
-# This is necessary because the version of sqlite3 in Streamlit Share is too old.
-# We don't actually use sqlite3 in a Streamlit Share context, because we use HttpClient,
-# so it's fine to use the app there despite ending up with an incompatible sqlite3.
-# sys.modules["sqlite3"] = lambda: None
-# sys.modules["sqlite3"].sqlite_version_info = (42, 42, 42)
-# __import__("chromadb")
-# del sys.modules["sqlite3"]
-# __import__("sqlite3")  # import here because chromadb was supposed to import it
-
 # Set up logging
 LOG_LEVEL = os.getenv("LOG_LEVEL")
 LOG_FORMAT = os.getenv("LOG_FORMAT")
@@ -51,89 +41,24 @@ WEATHER_KEY = os.getenv("WEATHER_SECRET_KEY", "")
 # VECTORDB_DIR = os.getenv("VECTORDB_DIR", "chroma/")
 
 MODEL_NAME = "gemini-1.5-flash"  # rename to DEFAULT_MODEL?
-# CONTEXT_LENGTH = int(os.getenv("CONTEXT_LENGTH", 16000))  # it's actually more like max
-# # size of what we think we can feed to the model so that it doesn't get overwhelmed
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.1))
-
-# ALLOWED_MODELS = os.getenv("ALLOWED_MODELS", MODEL_NAME).split(",")
-# ALLOWED_MODELS = [model.strip() for model in ALLOWED_MODELS]
-# if MODEL_NAME not in ALLOWED_MODELS:
-#     raise ValueError("The default model must be in the list of allowed models.")
-
-# EMBEDDINGS_MODEL_NAME = os.getenv("EMBEDDINGS_MODEL_NAME", "text-embedding-3-large")
-# EMBEDDINGS_DIMENSIONS = int(os.getenv("EMBEDDINGS_DIMENSIONS", 3072))
 
 LLM_REQUEST_TIMEOUT = float(os.getenv("LLM_REQUEST_TIMEOUT", 9))
 
 DEFAULT_MODE = os.getenv("DEFAULT_MODE", "/chat")
 
-# INCLUDE_ERROR_IN_USER_FACING_ERROR_MSG = bool(
-#     os.getenv("INCLUDE_ERROR_IN_USER_FACING_ERROR_MSG")
-# )
-
-# BYPASS_SETTINGS_RESTRICTIONS = bool(os.getenv("BYPASS_SETTINGS_RESTRICTIONS"))
-# BYPASS_SETTINGS_RESTRICTIONS_PASSWORD = os.getenv(
-#     "BYPASS_SETTINGS_RESTRICTIONS_PASSWORD"
-# )
-
-# DOMAIN_NAME_FOR_SHARING = os.getenv("DOMAIN_NAME_FOR_SHARING", "shared")
-
-# MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", 100 * 1024 * 1024))
-
-# INITIAL_TEST_QUERY_STREAMLIT = os.getenv("INITIAL_QUERY_STREAMLIT")
-
-# # Check that the necessary environment variables are set
-# DUMMY_OPENAI_API_KEY_PLACEHOLDER = "DUMMY NON-EMPTY VALUE"
-
-# if IS_AZURE and not (
-#     EMBEDDINGS_DEPLOYMENT_NAME
-#     and CHAT_DEPLOYMENT_NAME
-#     and os.getenv("AZURE_OPENAI_API_KEY")
-#     and os.getenv("OPENAI_API_BASE")
-# ):
-#     raise ValueError(
-#         "You have set some but not all environment variables necessary to utilize the "
-#         "Azure OpenAI API endpoint. Please refer to .env.example for details."
-#     )
-# elif not IS_AZURE and not DEFAULT_OPENAI_API_KEY:
-#     # We don't exit because we could get the key from the Streamlit app
-#     print(
-#         "WARNING: You have not set the DEFAULT_OPENAI_API_KEY environment variable. "
-#         "This is ok when running the Streamlit app, but not when running "
-#         "the command line app. For now, we will set it to a dummy non-empty value "
-#         "to avoid problems initializing the vectorstore etc. "
-#         "Please refer to .env.example for additional information."
-#     )
-#     os.environ["DEFAULT_OPENAI_API_KEY"] = DUMMY_OPENAI_API_KEY_PLACEHOLDER
-#     DEFAULT_OPENAI_API_KEY = DUMMY_OPENAI_API_KEY_PLACEHOLDER
-#     # TODO investigate the behavior when this happens
-
-# if not os.getenv("SERPER_API_KEY") and not os.getenv("IGNORE_LACK_OF_SERPER_API_KEY"):
-#     raise ValueError(
-#         "You have not set the SERPER_API_KEY environment variable, "
-#         "which is necessary for the Internet search functionality."
-#         "Pease set the SERPER_API_KEY environment variable to your Google Serper API key, "
-#         "which you can get for free, with no credit card, at https://serper.dev. "
-#         "This free key will allow you to make about 1250 searches until payment is required.\n\n"
-#         "If you want to supress this error, set the IGNORE_LACK_OF_SERPER_API_KEY environment "
-#         "variable to any non-empty value. You can then use features that do not require the "
-#         "Internet search functionality."
-#     )
-
-# # Verify the validity of the db path
-# if not os.getenv("USE_CHROMA_VIA_HTTP") and not os.path.isdir(VECTORDB_DIR):
-#     try:
-#         abs_path = os.path.abspath(VECTORDB_DIR)
-#     except Exception:
-#         abs_path = "INVALID PATH"
-#     raise ValueError(
-#         "You have not specified a valid directory for the vector database. "
-#         "Please set the VECTORDB_DIR environment variable in .env, as shown in .env.example. "
-#         "Alternatively, if you have a Chroma DB server running, you can set the "
-#         "USE_CHROMA_VIA_HTTP environment variable to any non-empty value. "
-#         f"\n\nThe path you have specified is: {VECTORDB_DIR}.\n"
-#         f"The absolute path resolves to: {abs_path}."
-#     )
-
+hashtags_mapping = {
+    "#분위기맛집 🌟": "분위기가 좋은 맛집을 원해.",
+    "#존맛 😋": "맛이 정말 뛰어난 맛집을 찾고 있어.",
+    "#서비스굿굿 👍": "서비스가 좋은 맛집을 원해.",
+    "#가성비갑 💸": "가격 대비 만족도가 높은 맛집을 원해.",
+    "#푸짐한음식량 🍽️": "음식 양이 푸짐한 맛집을 찾고 있어.",
+    "#연인과함께 💑": "연인과 함께 가기 좋은 맛집을 찾고 있어.",
+    "#다양한메뉴 📜": "메뉴 선택의 폭이 넓은 맛집을 원해.",
+    "#만족도200프로 😊": "만족도가 매우 높은 맛집을 원해.",
+    "#청결도최상 🧼": "청결하고 위생적인 맛집을 찾고 있어.",
+    "#주차편리 🚗": "주차가 편리한 맛집을 원해.",
+    "#위치편리 📍": "위치가 편리한 맛집을 찾고 있어."
+}
 
 is_env_loaded = True
