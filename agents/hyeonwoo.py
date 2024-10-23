@@ -273,23 +273,10 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_location = ''
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
-        return {'answer': result, 'title': rec['MCT_NM'][0], 'address': rec['ADDR'][0]}
+        return {'answer': result, 'title': rec['MCT_NM'][0].to_dict(), 'address': rec['ADDR'][0].to_dict()}
     elif json_format(response)["response_type"] == "Attribute-based":
         return {'answer': 'nope', 'title':'', 'address': ''}
-    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
-    #     sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
-    #     sql_chain = sql_prompt | llm 
-    #     output = sql_chain.invoke({"question": chat_state.message})
-    #     rec = sql_based_recommendation(output, df_quan)
-    #     print('attribute 응답:', rec)
-    #     rec_df = rec['recommendation'].reset_index()
-    #     result = chain.invoke({"question": chat_state.message, "recommendations": rec_df['MCT_NM'][0]})
 
-    #     chat_state.info_menuplace = ['']
-    #     chat_state.info_location = ''
-    #     chat_state.info_keyword = ['']
-    #     chat_state.info_business_type = ['']
-    #     return {'answer': result, 'title': rec['recommendation']['MCT_NM'][0], 'address': rec.iloc[0]['ADDR']}
     elif json_format(response)["response_type"] == "Keyword-based":
         print('\n\n\n\n호출됐음\n\n\n\n')
         retrieved = df[df['ADDR_detail'].str.contains(location)]
@@ -312,9 +299,9 @@ def get_hw_response(chat_state: ChatState):
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
-        print('키워드 추천 문서:', rec.iloc[0])
+        print('키워드 추천 문서:', rec.iloc[0].to_dict())
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0]})
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].to_dict()})
         
         chat_state.info_menuplace = ['']
         chat_state.info_location = ''
