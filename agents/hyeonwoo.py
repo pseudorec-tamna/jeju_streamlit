@@ -10,7 +10,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import chat_prompt_template, recommendation_prompt_template, recommendation_sql_prompt_template, item_search_prompt_template, explanation_template, multi_turn_template, recommendation_keyword_prompt_template
+from utils.prompts import chat_prompt_template, recommendation_prompt_template, multi_turn_prompt_template, recommendation_keyword_prompt_template
 
 from recommendation.prompt import sub_task_detection_prompt
 from recommendation.utils import json_format
@@ -314,7 +314,7 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_business_type = ['']
         return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
     elif json_format(response)["response_type"] == "Multi-turn":
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_template | llm | StrOutputParser()
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
         print(f"location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
         result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
         return {'answer': result, 'title': '', 'address': ''}
@@ -333,32 +333,6 @@ def get_hw_response(chat_state: ChatState):
             next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)
     print(f'--------------\n\nnextrec:{next_rec}\n\n\n--------------')
         
-    # elif response_type == "Item Detail Search":
-    #     # SQL 문으로 검색 가능하도록 
-
-    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | item_search_prompt_template | llm | StrOutputParser()
-    #     item_info = df.loc[df["MCT_NM"] == str(chat_state.message)].reset_index(drop=True)
-    #     print("item_info:", item_info)
-    #     result = chain.invoke({
-    #         "question": chat_state.message,
-    #         "MCT_NM": item_info["MCT_NM"],
-    #         "ADDR": item_info["ADDR"],
-    #         "tel": item_info["tel"],
-    #         "booking": item_info["booking"]
-    #         })
-    # elif response_type == "Explanation":
-    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | explanation_template | llm | StrOutputParser()
-    #     item_info = df.loc[df["MCT_NM"] == str(chat_state.message)].reset_index(drop=True)
-    #     print("item_info:", item_info)
-    #     result = chain.invoke({
-    #         "question": chat_state.message,
-    #         "MCT_NM": item_info["MCT_NM"],
-    #         "ADDR": item_info["ADDR"],
-    #         "tel": item_info["tel"],
-    #         "booking": item_info["booking"]
-    #         })
-    # else:
-    #     pass 
     print(f"답변 타입:{response_type}")
     print('여기서의 응답', result)
     response = {"answer": result, 'title': rec['recommendation']['MCT_NM'].iloc[0], 'address': rec['recommendation']['ADDR'].iloc[0]}

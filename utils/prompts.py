@@ -547,35 +547,35 @@ GOAL:
 '''
 
 recommendation_prompt_template = ChatPromptTemplate.from_messages([
-    ("system", recommendation_template_chat),
+    # ("system", recommendation_template_chat),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
+    ("human", recommendation_template_chat + "\n\n" + "{question}"),
 ])
 
 
 
 recommendation_sql_template_chat2 = '''당신은 탐라는 맛의 탐나 모델입니다. 
 사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
-아래의 주어진 <추천 결과> 및 <검색 정보>를 참고해서 질문의 답변을 도와주세요. 
+아래의 주어진 <추천 결과>를 참고해서 질문의 답변을 도와주세요. 
 참고로 모든 답변은 모두 {flag}로 친근하게 답변 해주세요. 
-
-<검색 정보>
-{search_info}
 
 <추천 결과> 
 {recommendations}
+</추천 결과>
+
+추천은 반드시 <추천 결과>안에서만 이루어져야합니다. 
 '''
 
 recommendation_sql_prompt_template2 = ChatPromptTemplate.from_messages([
-    ("system", recommendation_sql_template_chat2),
+    #("system", recommendation_sql_template_chat2),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
+    ("human", recommendation_sql_template_chat2 + "\n\n" + "{question}"),
 ])
 
 
 recommendation_sql_template_chat = '''당신은 탐라는 맛의 탐나 모델입니다. 
 사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
-아래의 주어진 <추천 결과> 및 <검색 정보>를 참고해서 질문의 답변을 도와주세요. 
+아래의 주어진 <추천 결과>를 참고해서 질문의 답변을 도와주세요. 
 참고로 모든 답변은 모두 {flag}로 친근하게 답변 해주세요. 
 
 IMPORTANCE:
@@ -584,7 +584,7 @@ IMPORTANCE:
 * If no data is available, state that there is no data.
 * Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
 * Never lie or make up information that doesn't exist.
-* "탐라는맛 화이팅!!" comment has to be in the last of the response.
+* 추천은 반드시 <추천 결과>에서 이루어져야합니다. 
 
 OUTPUT FORMAT:
  가게명: The name of the restaurant
@@ -606,28 +606,9 @@ OUTPUT:
 '''
 
 recommendation_sql_prompt_template = ChatPromptTemplate.from_messages([
-    ("system", recommendation_sql_template_chat),
+    # ("system", recommendation_sql_template_chat),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
-])
-
-
-recommendation_sql_template_chat2 = '''당신은 탐라는 맛의 탐나 모델입니다. 
-사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐나라고 소개하십시오. 
-아래의 주어진 <추천 결과> 및 <검색 정보>를 참고해서 질문의 답변을 도와주세요. 
-참고로 모든 답변은 모두 {flag}로 친근하게 답변 해주세요. 
-
-<검색 정보>
-{search_info}
-
-<추천 결과> 
-{recommendations}
-'''
-
-recommendation_sql_prompt_template2 = ChatPromptTemplate.from_messages([
-    ("system", recommendation_sql_template_chat2),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
+    ("human", recommendation_sql_template_chat + "\n\n" + "{question}"),
 ])
 
 
@@ -645,9 +626,9 @@ item_serach_template_chat = '''당신은 탐라는 맛의 탐나 모델입니다
 '''
 
 item_search_prompt_template = ChatPromptTemplate.from_messages([
-    ("system", item_serach_template_chat),
+    # ("system", item_serach_template_chat),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
+    ("human", item_serach_template_chat + "\n\n" + "{question}"),
 ])
 
 explanation_template_chat = '''
@@ -657,10 +638,10 @@ explanation_template_chat = '''
     * Please note that all responses should be in Korean.
 '''
 
-explanation_template = ChatPromptTemplate.from_messages([
-    ("system", explanation_template_chat),
+explanation_prompt_template = ChatPromptTemplate.from_messages([
+    # ("system", explanation_template_chat),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
+    ("human", explanation_template_chat + "\n\n" + "{question}"),
 ])
 
 
@@ -676,7 +657,6 @@ IMPORTANCE:
 * If no data is available, state that there is no data.
 * Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
 * Never lie or make up information that doesn't exist.
-* "탐라는맛 화이팅!!" comment has to be in the last of the response.
 
 OUTPUT FORMAT:
  가게명: The name of the restaurant
@@ -747,7 +727,6 @@ IMPORTANCE:
 * If no data is available, state that there is no data.
 * Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
 * Never lie or make up information that doesn't exist.
-* "탐라는맛 화이팅!!" comment has to be in the last of the response.
 * 'FEATURES INFO'가 None이 아니라면, 사용자에게 응답할 때 'FEATURES INFO'가 있고, 이를 기반으로 추천해주겠다고 항상 먼저 언급하세요. 
 * 'FEATURES INFO'와 관련된 정보를 제공하거나 이에 대해 참조할 필요가 있을 때는 이를 적절히 포함하도록 하세요. 
 
@@ -784,9 +763,9 @@ OUTPUT:
 '''
 
 recommendation_keyword_prompt_template2 = ChatPromptTemplate.from_messages([
-    ("system", recommendation_keyword_template_chat2),
+    # ("system", recommendation_keyword_template_chat2),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}"),
+    ("human", recommendation_keyword_template_chat2 + "\n\n" + "{question}"),
 ])
 
 
@@ -814,7 +793,7 @@ USER's QUESTION:
 OUTPUT:
 '''
 
-multi_turn_template = ChatPromptTemplate.from_messages([
-    ("system", multi_turn_chat),
+multi_turn_prompt_template = ChatPromptTemplate.from_messages([
+    # ("system", multi_turn_chat),
     MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{question}")])
+    ("human", multi_turn_chat + "\n\n" + "{question}")])

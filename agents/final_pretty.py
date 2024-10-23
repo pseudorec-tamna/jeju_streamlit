@@ -47,7 +47,7 @@ def load_memory(input, chat_state):
 
 
 def df_filter(mct_nm, addr):
-    df_tmp = df[(df['MCT_NM'].str.contains(mct_nm)) & (df['ADDR'] == addr)]
+    df_tmp = df[(df['MCT_NM'] == mct_nm) & (df['ADDR'] == addr)]
     
     # 데이터가 있는지 확인
     if df_tmp.empty:
