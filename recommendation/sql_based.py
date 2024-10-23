@@ -25,18 +25,23 @@ def extract_sql_query(result):
     from sqlalchemy import text
 
     select_content = text(select_content.encode('utf-8').decode('utf-8'))
-    print(f"쿼리: {select_content}")
+    # print(f"쿼리: {select_content}")
     result = pd.read_sql(select_content, con=mysql_uri)
     return result
 
 def sql_based_recommendation(result, df):
     
     result = extract_sql_query(result.content)
-    print('데이터', df[df["MCT_NM"].isin(result["MCT_NM"].values)])
-    print('결과', result)
-    print('컬럼', df.columns)
-    rec = df[df["MCT_NM"].isin(result["MCT_NM"])]
-    print('여어이기', rec)
+    # print('데이터', df[df["MCT_NM"].isin(result["MCT_NM"].values)])
+    # print('결과', result)
+    # print('컬럼', df.columns)
+
+    # SQL 결과가 안나오면 비어있을 수 있음 
+    if result.shape[0] >= 1:
+        rec = df[df["MCT_NM"] == result["MCT_NM"].values[0]].reset_index(drop=True)
+    else:
+        rec = df
+    print('여어이기', rec["MCT_NM"].values[0])
     return {
         "recommendation": rec,
     }

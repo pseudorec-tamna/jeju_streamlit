@@ -8,7 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import recommendation_sql_prompt_template2, chat_prompt_template
+from utils.prompts import recommendation_sql_prompt_template2, chat_prompt_template, recommendation_sql_prompt_template
 
 from langchain_core.runnables import RunnablePassthrough
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
@@ -83,7 +83,7 @@ def get_sql_chat(chat_state: ChatState):
         chat_state.info_business_type = ['']
         return {'answer': result}
     else:
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template2 | llm | StrOutputParser()
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
         sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
         sql_chain = sql_prompt | llm 
         output = sql_chain.invoke({"question": chat_state.message})
@@ -92,7 +92,7 @@ def get_sql_chat(chat_state: ChatState):
         flag = chat_state.flag
         print('attribute 응답:', rec)
         print("output:", output.content)
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].to_dict(), "search_info": output.content, "flag":flag})
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_dict(), "flag":flag})
 
         print(f"답변 타입: 정량 모델")
         print('여기서의 응답', result)
