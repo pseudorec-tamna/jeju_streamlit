@@ -192,7 +192,7 @@ hugging_embeddings = HuggingFaceEmbeddings(
 #     persist_directory="./chroma_db"          # Save the embeddings at the first time
 # )
 hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=hugging_embeddings)        # Load the embeddings
-hugging_retriever = hugging_vectorstore.as_retriever()
+hugging_retriever_baseline = hugging_vectorstore.as_retriever()
 
 
 # print('렛츠고ㅇ', hugging_retriever.invoke('중문'))
@@ -243,37 +243,45 @@ def get_hw_response(chat_state: ChatState):
         coord = get_coordinates_by_question(chat_state.message)
         st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
         print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
-
-        # from IPython.display import IFrame
-        latitude, longitude = coord  # coord에서 위도와 경도 추출
-        # display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
-        st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
-        
-        while True: 
-            response = requests.get('http://127.0.0.1:5000/get_coordinates')
-            coordinates = response.json()
-            latitude = coordinates['latitude']
-            longitude = coordinates['longitude']
+        if coord != (0,0):
+            # from IPython.display import IFrame
+            latitude, longitude = coord  # coord에서 위도와 경도 추출
+            # display(IFrame(src='http://127.0.0.1:5000', width=1200, height=600))
+            st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
             
-            print(latitude)
-            print(longitude)
-            if latitude is not None and longitude is not None:
-                break
-            time.sleep(5)
+            while True: 
+                response = requests.get('http://127.0.0.1:5000/get_coordinates')
+                coordinates = response.json()
+                latitude = coordinates['latitude']
+                longitude = coordinates['longitude']
+                
+                print(latitude)
+                print(longitude)
+                if latitude is not None and longitude is not None:
+                    break
+                time.sleep(5)
+            
+            rec = coordinates_based_recommendation((longitude, latitude), df)
+            print('여기 조사', rec)
+            rec = rec.reset_index()
+            print('프린트', rec['MCT_NM'][0])
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
+            return {'answer': result, 'title': rec['MCT_NM'][0], 'address': rec['ADDR'][0]}
+        else:
+            docs = hugging_retriever_baseline.invoke(chat_state.message)
+            for doc in docs:
+                row.append(doc.metadata)
+            rec = pd.DataFrame(row).reset_index()
+            print('거리 -> 키워드 추천 문서:', rec.iloc[0].astype(str))
+            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].astype(str)})
+
+            chat_state.info_menuplace = ['']
+            chat_state.info_location = ''
+            chat_state.info_keyword = ['']
+            chat_state.info_business_type = ['']
+            return {'answer': result, 'title': rec['MCT_NM'], 'address': rec['ADDR']}
         
-        rec = coordinates_based_recommendation((longitude, latitude), df)
-        print('여기 조사', rec)
-        rec = rec.reset_index()
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
-
-        chat_state.info_menuplace = ['']
-        chat_state.info_location = ''
-        chat_state.info_keyword = ['']
-        chat_state.info_business_type = ['']
-        return {'answer': result, 'title': rec['MCT_NM'][0].to_dict(), 'address': rec['ADDR'][0].to_dict()}
-    elif json_format(response)["response_type"] == "Attribute-based":
-        return {'answer': 'nope', 'title':'', 'address': ''}
-
     elif json_format(response)["response_type"] == "Keyword-based":
         print('\n\n\n\n호출됐음\n\n\n\n')
         retrieved = df[df['ADDR_detail'].str.contains(location)]
@@ -296,9 +304,9 @@ def get_hw_response(chat_state: ChatState):
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
-        print('키워드 추천 문서:', rec.iloc[0].to_dict())
+        print('키워드 추천 문서:', rec.iloc[0].astype(str))
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].to_dict()})
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].astype(str)})
         
         chat_state.info_menuplace = ['']
         chat_state.info_location = ''
