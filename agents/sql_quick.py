@@ -8,7 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import recommendation_sql_prompt_template
+from utils.prompts import recommendation_sql_prompt_template2
 
 from langchain_core.runnables import RunnablePassthrough
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
@@ -47,7 +47,7 @@ def get_sql_chat(chat_state: ChatState):
         google_api_key=chat_state.google_api_key
     )
     
-    chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
+    chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template2 | llm | StrOutputParser()
     sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
     sql_chain = sql_prompt | llm 
     output = sql_chain.invoke({"question": chat_state.message})
