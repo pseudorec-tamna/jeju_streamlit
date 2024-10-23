@@ -12,6 +12,7 @@ from components.llm import get_prompt_llm_chain
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from agents.greeting_quick import get_greeting_chat_chain
 from agents.sql_quick import get_sql_chat
+from agents.keyword_quick import get_keywords_chat
 from agents.question_quick import get_question_chat_chain
 from agents.hyeonwoo import get_hw_response
 from utils.type_utils import ChatMode
@@ -50,6 +51,8 @@ def get_bot_response(
         return {"answer": answer}
     elif chat_mode_val == ChatMode.SQL_CHAT_ID.value:
         return get_sql_chat(chat_state)
+    elif chat_mode_val == ChatMode.KEYWORD_CHAT_ID.value:
+        return get_keywords_chat(chat_state)
     elif chat_mode_val == ChatMode.JUST_CHAT_GREETING_ID.value:
         return get_greeting_chat_chain(chat_state)
     elif chat_mode_val == ChatMode.CHAT_HW_ID.value:
