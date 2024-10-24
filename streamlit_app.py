@@ -394,7 +394,7 @@ def hashtag(eng_flag=False):
                 "#주차편리 🚗",    # 주차의 편리함을 강조
                 "#위치편리 📍"    # 접근성의 용이함을 강조
             ]
-        h_expander = "식당 해시태그"
+        h_expander = "식당 해시태그 (해시태그 클릭 후 '추천해줘!' 라고 채팅창에 물어보세요!)"
         text_tmp = "나만의 해시태그 추가"
 
     # hashtags_mapping의 value를 key로 하고 key를 value로 하는 역매핑 생성
@@ -485,7 +485,7 @@ def display_top_10(df):
         store_name = row['MCT_NM']
         addr = row['ADDR']
         # url_setting 함수로 HTML 형식의 가게 정보 생성
-        info_box = url_setting(store_name, addr, 30)
+        info_box = url_setting(store_name, addr, 40)
         info_boxes.append(info_box)
 
     # 저장된 HTML 블록을 순차적으로 markdown에서 렌더링
