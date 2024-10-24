@@ -732,8 +732,8 @@ IMPORTANCE:
 * Even if the data doesn't perfectly match the question, emphasize that it's the closest possible option.
 * Never lie or make up information that doesn't exist.
 * The recommendation response must be based on RECOMMENDED DOCUMENTS.
-* 'FEATURES INFO'가 None이 아니라면, 사용자에게 응답할 때 'FEATURES INFO'가 있고, 이를 기반으로 추천해주겠다고 항상 먼저 언급하세요. 
-* 'FEATURES INFO'와 관련된 정보를 제공하거나 이에 대해 참조할 필요가 있을 때는 이를 적절히 포함하도록 하세요. 
+* '나만의 해시태그'가 None이 아니라면, 사용자에게 응답할 때 '나만의 해시태그'가 있고, 이를 기반으로 추천해주겠다고 항상 먼저 언급하세요. 
+* '나만의 해시태그'와 관련된 정보를 제공하거나 이에 대해 참조할 필요가 있을 때는 이를 적절히 포함하도록 하세요. 
 
 OUTPUT FORMAT:
  가게명: The name of the restaurant
@@ -751,7 +751,7 @@ USER's QUESTION:
 RECOMMENDED DOCUMENTS:
 {recommendations}
 
-FEATURES INFO:
+나만의 해시태그:
 {selected_tags}
 
 OUTPUT:
