@@ -81,19 +81,30 @@ def df_filter(mct_nm, addr):
 def tags2dict(input_str):
     # 문자열을 리스트로 변환
     items = eval(input_str)
-
+    
     # 딕셔너리 생성
     result_dict = {}
     for item in items[1:]:  # '특징'을 제외하고 처리
-        key, value = item.split('::')
-        result_dict[key] = int(value.replace(',', ''))  # 쉼표 제거 후 정수로 변환
-
+        # '::'로 분리하고, 분리된 값의 개수를 확인
+        split_item = item.split('::')
+        
+        if len(split_item) == 2:  # 예상된 값이 두 개인 경우에만 처리
+            key, value = split_item
+            result_dict[key] = int(value.replace(',', ''))  # 쉼표 제거 후 정수로 변환
+        else:
+            # '::'가 없는 경우의 처리 (예: '특징' 등)
+            result_dict[item] = 1
+            print(f"Invalid item format: {item}")
+            
     # 숫자가 큰 순서대로 정렬하여 상위 5개 추출
     top_5 = dict(sorted(result_dict.items(), key=lambda x: x[1], reverse=True)[:5])
+
     return top_5
 
 def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count):
-    content = "<div style='font-family: sans-serif; padding: 10px;'>"    
+    content = "<div style='font-family: sans-serif; padding: 10px;'>"   
+    menu_tags = menu_tags.strip()
+    feature_tags = feature_tags.strip()
     
     # if img and img.strip():
     #     content += f"<p style='margin-bottom: 0;'><b>📸 점포 사진 보기:</b></p>\n"
@@ -108,7 +119,7 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
     if review_count and str(review_count) > "0":
         content += f"<p><b>🔢 리뷰 수:</b> {review_count} 개</p>\n"
     
-    if menu_tags and len(menu_tags) > 3:
+    if menu_tags and len(menu_tags) > 5:
         content += "<p style='margin-bottom: 0;'><b>🍴 인기 메뉴 (Top 5):</b></p>\n"
         content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
         tag_dict = tags2dict(menu_tags)
@@ -118,7 +129,7 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
             content += "</div>"
         content += "</div>\n"
         
-    if feature_tags and len(feature_tags) > 3:
+    if feature_tags and len(feature_tags) > 5:
         content += "<p style='margin-bottom: 0; margin-top: 20px;'><b>🌟 이곳의 매력 포인트 (Top 5):</b></p>\n"
         content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
         tag_dict = tags2dict(feature_tags)
@@ -132,7 +143,7 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
         content += f"<p style='margin-top: 20px;'><b>💬 솔직 리뷰:</b> {review}</p>\n"
     
     if revisit and revisit.strip():
-        content += f"<p><b>🔄 다시 방문할까?</b> {'예! 꼭 또 가고 싶어요!!' if '매우 높음' in revisit else '예, 재방문 의사 있어요!' if '높음' in revisit else '음, 재방문에 대해 고민 중...'}</p>\n"
+        content += f"<p><b>🔄 다시 방문할까?</b> {'예! 꼭 또 가고 싶어요!!' if '매우 높음' in revisit else '예, 재방문 의사 있어요!' if '높음' in revisit else '음, 다시 방문할지는 잘 모르겠어요!'}</p>\n"
     
     if reservation and reservation.strip():
         content += f"<p><b>📞 예약 필요해?</b> {'예, 필수!' if '높음' in reservation else '아니요, 대부분은 예약 없이 방문했어요!'}</p>\n"
