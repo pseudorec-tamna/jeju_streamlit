@@ -17,7 +17,7 @@ from utils.client import MysqlClient
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from agents.hyeonwoo import sub_task_detection, json_format
-
+from recommendation.utils import sql_task_detection
 # df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
 # df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
 # df = df.reset_index(drop=True)
@@ -26,7 +26,7 @@ from agents.hyeonwoo import sub_task_detection, json_format
 # meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
 mysql = MysqlClient()
 
-query = f"select * from tamdb.basic_info"
+query = f"select * from tamdb.basic_info_1"
 mysql.cursor.execute(query)
 rows = mysql.cursor.fetchall()
 columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
@@ -48,50 +48,27 @@ def get_sql_chat(chat_state: ChatState):
         google_api_key=chat_state.google_api_key
     )
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
-    menuplace = chat_state.info_menuplace
-    location = chat_state.info_location
-    keyword = chat_state.info_keyword
-    business_type = chat_state.info_business_type
 
-    response = sub_task_detection(chat_state.message, location, menuplace, keyword)
+
+    response = sql_task_detection(chat_state.message)
 
     response_type = json_format(response)["response_type"]
     print(f"답변 타입:{response_type}")
     print('답변', json_format(response))
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
-        print(chain)
         result = chain.invoke({"question": chat_state.message})
-    # elif response_type == "User Preference Elicitation":
-    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm
-    #     result = chain.invoke({"question": chat_state.message})
-        
-    # elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
-        rec = None # 변수 초기화
-        print(f"추천 타입:{json_format(response)['response_type']}")
-        print(f"추천 요소:{json_format(response)['recommendation_factors']}")
-        menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
-        location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
-        keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
-        business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
-    
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
 
-        chat_state.info_menuplace = ['']
-        chat_state.info_location = ''
-        chat_state.info_keyword = ['']
-        chat_state.info_business_type = ['']
-        return {'answer': result}
+        rec = None # 변수 초기화
+        return {'answer': result, 'title': '', 'address': ''}
     else:
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
         sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
         sql_chain = sql_prompt | llm 
-        output = sql_chain.invoke({"question": chat_state.message})
-        rec = sql_based_recommendation(output, df_quan)
+        output = sql_chain.invoke({"question": chat_state.message}) # sql 출력
+        rec = sql_based_recommendation(output, df_quan)             # 문서 검색
 
         flag = chat_state.flag
-        print('attribute 응답:', rec)
-        print("output:", output.content)
         result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_dict(), "flag":flag})
 
         print(f"답변 타입: 정량 모델")
