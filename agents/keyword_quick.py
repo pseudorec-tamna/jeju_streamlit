@@ -138,7 +138,7 @@ def get_keywords_chat(chat_state: ChatState):
         chat_state.info_business_type = ['']
         return {'answer': result}
     else:
-        tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
+        tmp_rank = [f"{i+1} 순위로 " + j for i, j in enumerate(chat_state.selected_tags)]
         selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
 
         print('\n\n\n\n호출됐음\n\n\n\n')
