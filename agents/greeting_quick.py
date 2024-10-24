@@ -160,7 +160,7 @@ def get_greeting_chat_chain(
     # Initialize the Gemini 1.5 Flash LLM
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
-        google_api_key=chat_state.google_api_key
+        google_api_key=chat_state.google_api_key,
     )
 
     chain = LLMChain(llm=llm, prompt=prompt_qa)

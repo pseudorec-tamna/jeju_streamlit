@@ -14,7 +14,11 @@ from recommendation.prompt import sub_task_detection_prompt, address_extract_pro
 import google.generativeai as genai
 from dotenv import load_dotenv
 from utils.prepare import GEMINI_API_KEY
-
+from langchain_google_genai import (
+    ChatGoogleGenerativeAI,
+    HarmBlockThreshold,
+    HarmCategory,
+)
 
 def json_format(response):
     response = response.replace("json", '')
@@ -43,18 +47,28 @@ def calculate_distance(coord1, coord2):
     """
     return geodesic(coord1, coord2).km
 
+
+
 def sub_task_detection(question, location, menuplace, keyword, original_question):
     import os 
     load_dotenv()
 
     # genai.configure(api_key="AIzaSyBs54U6aYVwaVVe4KKnPFzc-eQQDMkLIcA")
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GEMINI_API_KEY)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GEMINI_API_KEY,
+                                  safety_settings={
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE
+            },
+            )
     prompt = ChatPromptTemplate.from_template(
         sub_task_detection_prompt
     )
     chain = prompt | llm | StrOutputParser()
+    
     response = chain.invoke({"user_question": question, "location":location, "menuplace": menuplace, "keyword": keyword, "original_question": original_question})
-
+    print('여기---', response)
     """
     5개의 Type 중 하나를 선택 
     User Preference Elicitation, Recommendation, Explanation, Item Detail Search, Chat

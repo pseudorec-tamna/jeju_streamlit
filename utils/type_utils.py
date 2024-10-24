@@ -69,12 +69,22 @@ class DDGError(Exception):
         return (
             f"{self.user_facing_message} The error reads:\n```\n{self.__cause__}\n```"
         )
+from langchain_google_genai import (
+    ChatGoogleGenerativeAI,
+    HarmBlockThreshold,
+    HarmCategory,
+)
 
-
+from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
 class BotSettings(BaseModel):
     llm_model_name: str = MODEL_NAME
     temperature: float = TEMPERATURE
-
+    safety_settings: object ={
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE
+            },
 
 AccessRole = Enum("AccessRole", {"NONE": 0, "VIEWER": 1, "EDITOR": 2, "OWNER": 3})
 

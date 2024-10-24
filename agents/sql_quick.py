@@ -17,12 +17,7 @@ from utils.client import MysqlClient
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from agents.hyeonwoo import sub_task_detection, json_format
-# df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
-# df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
-# df = df.reset_index(drop=True)
 
-# database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
-# meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
 mysql = MysqlClient()
 
 query = f"select * from tamdb.basic_info_1"
@@ -44,7 +39,7 @@ def get_sql_chat(chat_state: ChatState):
     # Initialize the Gemini 1.5 Flash LLM
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
-        google_api_key=chat_state.google_api_key
+        google_api_key=chat_state.google_api_key,
     )
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
 
