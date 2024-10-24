@@ -26,7 +26,7 @@ def get_question_chat_chain(
 
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
-        google_api_key=chat_state.google_api_key
+        google_api_key=chat_state.google_api_key,
     )
 
     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | prompt_qa | llm

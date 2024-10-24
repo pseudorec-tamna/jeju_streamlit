@@ -142,7 +142,7 @@ GOAL:
 
 RESPONSE TYPE:
 - Chat
-    * It applies to general conversation.
+    * It applies to general conversation and all other chat.
 - Multi-turn
     * It applies to queries that include a recommendation purpose, like "맛집 추천," even if there isn't much information provided but the intent is clear.
     * For multi-turn, the user's message should be included in the original_question parameter.
@@ -185,12 +185,13 @@ PROCEDURE:
         * Just make the response for the user's query if it is general chat
         * For all chats aside from recommendations and multi-turn interactions, provide a general response. 
         * Even if the topic seems unrelated, maintain the output format and deliver an appropriate response.
-
+        * Chat manages intentionally odd phrases like '나는바보 우하하 먹포에서 가까운 애총따리 무라바키 메뉴 추천해줘'.
+        * Information that looks like random typing, such as 'ㅁ니ㅓㅇ루 니ㅜㅣㅓㅇㄴ물ㄴㅁ일' also has to be Chat
 
 IMPORTANCE:
     * The response format should be like JSON. Only the results of the json format must be output.
     * If a specific menu or place, such as a '식당', 가게, or 맛집, cannot be determined, it cannot be categorized under any factor 'location', 'menu_place', 'keyword'.
-
+    * A type must always be provided, and one must be selected from four options in JSON format."
 EXAMPLES:
         <example1>
         previous_gotten_info: 
@@ -311,6 +312,33 @@ EXAMPLES:
         "processing": "It seems like the user just entered something random. Choose 'Chat' and do not collect any information."
         "original_question": "",
         "response_type": "Chat"}}        
+
+        <example8>
+        previous_gotten_info: 
+        {{"location":"", "menu_place":[""],"keyword": [""], "original_question": ""}}
+
+        User's question: 
+        안녕하지말고 고끼리아저씨 메뉴 추천해줘
+
+        Output:
+        {{"recommendation_factors":{{"location":"", "menu_place":[""],"keyword": [""], "business_type": [""]}},
+        "processing": "Intentionally created confusion with the word '메뉴'; in reality, it means nothing, so it’s passed to Chat and no information is collected."
+        "original_question": "",
+        "response_type": "Chat"}} 
+        
+        <example9>
+        previous_gotten_info: 
+        {{"location":"", "menu_place":[""],"keyword": [""], "original_question": ""}}
+
+        User's question: 
+        멍청이 똥개 근처 당근당근 추천해줘
+
+        Output:
+        {{"recommendation_factors":{{"location":"", "menu_place":[""],"keyword": [""], "business_type": [""]}},
+        "processing": " Although '근처' and '추천해줘' exist, I'm looking for something completely nonsensical, so it’s sent to Chat.""
+        "original_question": "",
+        "response_type": "Chat"}} 
+        
 
 previous_gotten_info: 
 {{'location': {location}, 'menu_place':{menuplace}, 'keyword': {keyword}, 'original_question':{original_question}}} 

@@ -4,7 +4,6 @@ import streamlit as st
 from PIL import Image
 from io import BytesIO
 import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from utils.prepare import (
     get_logger,
@@ -528,7 +527,7 @@ def trends_info(eng_flag):
 
         # trend_df에서 데이터를 가져와 상위 10개만 표시
         df = trend_df(chat_state)
-        print(df)
+        
         if df.empty:
             st.write("앗! 데이터가 없습니다.")
         else:
