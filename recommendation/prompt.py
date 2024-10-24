@@ -166,7 +166,7 @@ PROCEDURE:
         2. Check if the query is a response from the user to the previously generated Multi-turn conversation.
             * If the input is a short response or lacks specific details, such as just naming a menu item or a place they want to visit like '횟집', '흑돼지', it can be a reply to a question aimed at multi-turn conversations.
             * [Important]However, in the case of Distance-based recommendations, if expressions like '근처', '가까운', or '[location]에서 갈만한' are present, perform the task without a Multi-turn process.
-            * And you can easily realize if it is Muliti-turn with 'original_quesetion' variable. When receiving the user's query, the 'original_question' will be included. If this is filled, it can be considered that the response is based on a multi-turn interaction.
+            * And you can easily realize if it is Muliti-turn with 'original_question' variable. When receiving the user's query, the 'original_question' will be included. If this is filled, it can be considered that the response is based on a multi-turn interaction.
         3. If there are two or more elements for recommendation on the given information and existing data, select this recommendation type from the options.
     
     * if the user's question is about Distance-based recommendation:
