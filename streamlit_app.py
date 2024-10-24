@@ -101,6 +101,13 @@ def scroll_to_bottom():
         height=0
     )
 
+# info_box 리스트의 각 요소를 <p></p>로 감싸는 함수
+def wrap_info_box(info_boxes):
+    # 각 요소를 <p></p>로 감싸고 문자열로 반환
+    wrapped_boxes = [f"<p>{box}</p>" for box in info_boxes]
+    return "\n".join(wrapped_boxes)  # 리스트를 하나의 문자열로 결합
+
+
 def open_ai_chat(eng_flag=False):
     # 채팅창 생성
     if "messages" not in ss:
@@ -115,6 +122,9 @@ def open_ai_chat(eng_flag=False):
     # 질문지 생성 
     with st.container():
         clicked_sample_query = questions_recommending()
+
+    # 페이지 마지막으로 스크롤 자동화
+    scroll_to_bottom()
 
     # Chat 입력창 설명 
     if eng_flag:
@@ -160,10 +170,10 @@ def open_ai_chat(eng_flag=False):
             answer = response["answer"]
 
             # Check if title and address exists, and display the relevant URL info
-            info_box = ""
+            info_box = []
             if response["title"] and response["address"]:
                 for res in range(len(response['title'])):
-                    info_box = url_setting(response["title"][res], response["address"][res], 100)   
+                    info_box.append(url_setting(response["title"][res], response["address"][res], 100))
             
             # Display the "complete" status - custom or default
             if status:
@@ -178,11 +188,11 @@ def open_ai_chat(eng_flag=False):
             chat_state.chat_history.append((prompt, answer))
             # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
             message_placeholder.markdown(answer) # fix_markdown
-            if info_box:
-                st.markdown(info_box, unsafe_allow_html=True)
+            if len(info_box) > 0:
+                st.markdown(wrap_info_box(info_box), unsafe_allow_html=True)
 
         # Assistant 메시지와 info_box를 함께 추가 (HTML 포함)
-        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box}"})
+        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{wrap_info_box(info_box)}"})
         # 페이지 마지막으로 스크롤 자동화
         scroll_to_bottom()
         # 페이지 새로고침
@@ -440,12 +450,13 @@ def hashtag(eng_flag=False):
 
         chat_state.selected_tags = ss.selected_tags
         if len(chat_state.selected_tags) > 0 :
+            tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
             # Append chat history when user_id changes
             chat_state.chat_history.append(
-                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(chat_state.selected_tags))
+                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(tmp_rank))
             )
             chat_state.chat_history_all.append(
-                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(chat_state.selected_tags))
+                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(tmp_rank))
             )
 
         print(chat_state.selected_tags)
@@ -530,7 +541,9 @@ def side_bar(eng_flag=False):
         # Clear chat history
         def clear_chat_history():
             ss.messages = []
-            chat_state: ChatState = ss.chat_state
+            chat_state.chat_history = []
+            chat_state.chat_history_all = []
+            
         # 대화창 초기화 설명
         if eng_flag:
             st.write("#### 👇 Click the button below to reset the chat window.")    
@@ -649,7 +662,7 @@ def url_setting(title, addr, max_h):
         
     id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count = result
     content = display_store_info(id_url, addr, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count)
-    
+
     # 이미지가 있을 경우 사진 추가 (클릭 시 새 창에서 원본 보기)
     image_html = ""
     if img and img.strip():
