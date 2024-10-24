@@ -162,7 +162,8 @@ def open_ai_chat(eng_flag=False):
             # Check if title and address exists, and display the relevant URL info
             info_box = ""
             if response["title"] and response["address"]:
-                info_box = url_setting(response["title"], response["address"], 100)   
+                for res in range(len(response['title'])):
+                    info_box = url_setting(response["title"][res], response["address"][res], 100)   
             
             # Display the "complete" status - custom or default
             if status:

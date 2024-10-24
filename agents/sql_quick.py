@@ -96,7 +96,11 @@ def get_sql_chat(chat_state: ChatState):
 
         print(f"답변 타입: 정량 모델")
         print('여기서의 응답', result)
-        response = {"answer": result, 'title': rec['recommendation']['MCT_NM'].iloc[0], 'address': rec['recommendation']['ADDR'].iloc[0]}
+        response = response = {
+                "answer": result, 
+                'title': rec['recommendation']['MCT_NM'].iloc[:min(3, len(rec['recommendation']))].tolist(), 
+                'address': rec['recommendation']['ADDR'].iloc[:min(3, len(rec['recommendation']))].tolist()
+            }
         print('응답', response)
 
         return response

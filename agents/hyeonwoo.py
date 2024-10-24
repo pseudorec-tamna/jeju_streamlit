@@ -72,44 +72,44 @@ path_transition_matrix = './data/transition_matrix.csv'
 transition_matrix_df = pd.read_csv(path_transition_matrix)
 visit_poi_df = pd.read_csv(path_visit_additional_info)
 
-documents = []
-for row in df.iterrows():
-  document = Document(
-      page_content=f"""name:{row[1]['MCT_NM']}, 
-      review_summary:{row[1]['review']},
-      full_location:{row[1]['ADDR']}, 
-      location:{row[1]['ADDR_detail']}, 
-      average_score:{row[1]['average_score']}, 
-      average_price:{row[1]['mean_price']},
-      payment_method:{row[1]['payment']}, 
-      review_counts: {row[1]['v_review_cnt']},
-      menu_info:{row[1]['menu_tags']}, 
-      feature_info:{row[1]['feature_tags']},
-      revisit_info:{row[1]['revisit']},
-      reservation_info:{row[1]['reservation']},
-      companion_info:{row[1]['companion']},
-      waiting_info:{row[1]['waiting_time']},
-      type: {row[1]['MCT_TYPE']}
-      """,
-      metadata={
-        "name":row[1]['MCT_NM'], 
-                "review_summary":row[1]['review'],
-                "full_location":row[1]['ADDR'],
-                "location":row[1]['ADDR_detail'], 
-                "average_score":row[1]['average_score'], 
-                "average_price":row[1]['mean_price'],
-                "payment_method":row[1]['payment'], 
-                "review_counts": row[1]['v_review_cnt'],
-                "menu_info":row[1]['menu_tags'], 
-                "feature_info":row[1]['feature_tags'],
-                "revisit_info":row[1]['revisit'],
-                "reservation_info":row[1]['reservation'],
-                "companion_info":row[1]['companion'],
-                "waiting_info":row[1]['waiting_time'],
-                "type": row[1]['MCT_TYPE']
-      }
-  )
-  documents.append(document)
+# documents = []
+# for row in df.iterrows():
+#   document = Document(
+#       page_content=f"""name:{row[1]['MCT_NM']}, 
+#       review_summary:{row[1]['review']},
+#       full_location:{row[1]['ADDR']}, 
+#       location:{row[1]['ADDR_detail']}, 
+#       average_score:{row[1]['average_score']}, 
+#       average_price:{row[1]['mean_price']},
+#       payment_method:{row[1]['payment']}, 
+#       review_counts: {row[1]['v_review_cnt']},
+#       menu_info:{row[1]['menu_tags']}, 
+#       feature_info:{row[1]['feature_tags']},
+#       revisit_info:{row[1]['revisit']},
+#       reservation_info:{row[1]['reservation']},
+#       companion_info:{row[1]['companion']},
+#       waiting_info:{row[1]['waiting_time']},
+#       type: {row[1]['MCT_TYPE']}
+#       """,
+#       metadata={
+#         "name":row[1]['MCT_NM'], 
+#                 "review_summary":row[1]['review'],
+#                 "full_location":row[1]['ADDR'],
+#                 "location":row[1]['ADDR_detail'], 
+#                 "average_score":row[1]['average_score'], 
+#                 "average_price":row[1]['mean_price'],
+#                 "payment_method":row[1]['payment'], 
+#                 "review_counts": row[1]['v_review_cnt'],
+#                 "menu_info":row[1]['menu_tags'], 
+#                 "feature_info":row[1]['feature_tags'],
+#                 "revisit_info":row[1]['revisit'],
+#                 "reservation_info":row[1]['reservation'],
+#                 "companion_info":row[1]['companion'],
+#                 "waiting_info":row[1]['waiting_time'],
+#                 "type": row[1]['MCT_TYPE']
+#       }
+#   )
+#   documents.append(document)
 
 def invoke_form(doc):
     content = f"""
@@ -166,37 +166,6 @@ def invoke_form(doc):
 def format_docs(docs):
 
     return "\n\n".join(invoke_form(doc) for doc in docs[0:1])
-# # 정보 없는 가게 모두 제거
-# df['title'].replace('', np.nan, inplace=True)
-# df= df.dropna(subset='title')
-
-
-
-
-# Embedding 모델 불러오기 - 개별 환경에 맞는 device로 설정
-model_name = "upskyy/bge-m3-Korean"
-model_kwargs = {
-    # "device": "cuda"
-    # "device": "mps"
-    "device": "cpu"
-}
-encode_kwargs = {"normalize_embeddings": True}
-hugging_embeddings = HuggingFaceEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs,)
-
-# hugging_vectorstore = Chroma.from_documents(
-#     documents=documents,
-#     embedding=hugging_embeddings,
-#     persist_directory="./chroma_db"          # Save the embeddings at the first time
-# )
-hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=hugging_embeddings)        # Load the embeddings
-hugging_retriever_baseline = hugging_vectorstore.as_retriever()
-# hugging_retriever_distance = hugging_vectorstore.as_retriever()
-
-
-# print('렛츠고ㅇ', hugging_retriever.invoke('중문'))
 
 def load_memory(input, chat_state):
     # print("chat_state:", chat_state.memory)
@@ -212,8 +181,13 @@ def get_hw_response(chat_state: ChatState):
         model=chat_state.bot_settings.llm_model_name,
         google_api_key=chat_state.google_api_key
     )
-    print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
+    # RAG용 vectordb instance 불러오기
+    hugging_vectorstore = chat_state.vectorstore
+    # hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=chat_state.embedding_model)  
+    hugging_retriever_baseline = hugging_vectorstore.as_retriever()
 
+    print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
+    print(f">>>")
     response = sub_task_detection(
         chat_state.message, 
         chat_state.info_location, 
@@ -290,7 +264,16 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_location = ''
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
-        return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
+        print('결과', {
+            'answer': result, 
+            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+        })
+        return {
+            'answer': result, 
+            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+        }
         # else:
         #     latitude, longitude = coord  # coord에서 위도와 경도 추출
         #     docs = hugging_retriever_baseline.invoke(chat_state.message)
@@ -326,6 +309,8 @@ def get_hw_response(chat_state: ChatState):
 
         filtered_location = retrieved['ADDR_detail'].unique()
         filtered_business_type = business_type
+        print('수집된 location', filtered_location)
+        print('수집된 busyness type', filtered_business_type)
         hugging_retriever = hugging_vectorstore.as_retriever(
             search_type='similarity',
             search_kwargs={
@@ -334,12 +319,15 @@ def get_hw_response(chat_state: ChatState):
                 }
             }, 
         )
+        print(hugging_retriever)
         row = []
         # print("chat_state.message", chat_state.message)
         docs = hugging_retriever.invoke(chat_state.message)
+        print('docs', docs)
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
+        print('개수', len(rec))
         print('키워드 추천 문서:', rec.iloc[0].astype(str))
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].astype(str)})
@@ -348,7 +336,17 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_location = ''
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
-        return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
+        print('이게 문제', rec['name'][:min(3, len(rec['name']))].tolist())
+        print('결과', {
+            'answer': result, 
+            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+        })
+        return {
+            'answer': result, 
+            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+        }
     elif response_type == "Multi-turn":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
         print(f"location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
