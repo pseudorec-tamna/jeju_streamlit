@@ -31,17 +31,20 @@ def get_coordinates_by_nominatim(address):
     """
     n = 0
     geolocator = Nominatim(user_agent="my_agent")
-    location = geolocator.geocode(address)
-    while (location is None):
-        address = ' '.join(address.split(" ")[:-1])
+    try:
         location = geolocator.geocode(address)
-        n += 1 
-        if n > 3: break
-    print('get_coordinates_by_nominatim함수')
-    if location is not None:
-        return (location.longitude, location.latitude)
-    else:
-        print('distance - location 확인안됨')
+        while (location is None):
+            address = ' '.join(address.split(" ")[:-1])
+            location = geolocator.geocode(address)
+            n += 1 
+            if n > 3: break
+        print('get_coordinates_by_nominatim 함수')
+        if location is not None:
+            return (location.longitude, location.latitude)
+        else:
+            print('distance - location 확인안됨')
+            return (0,0)
+    except: 
         return (0,0)
 # 카카오 주소 추출 
 import requests
