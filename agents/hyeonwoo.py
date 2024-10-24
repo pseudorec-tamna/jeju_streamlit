@@ -183,7 +183,7 @@ def get_hw_response(chat_state: ChatState):
 
     # 벡터DB 로드
     hugging_vectorstore = chat_state.vectorstore
-
+    hugging_retriever_baseline = hugging_vectorstore.as_retriever()
 
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
     
@@ -226,7 +226,7 @@ def get_hw_response(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message})
         rec = None # 변수 초기화
-        return {'answer': result, 'title':'', 'address': ''}    
+        return {'answer': result}    
 
     if response_type == "Distance-based":
         # coord = get_coordinates_by_question(chat_state.message)
@@ -262,6 +262,14 @@ def get_hw_response(chat_state: ChatState):
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
+        if len(rec) == 0:
+            # fall back
+            docs = hugging_retriever_baseline.invoke(location + ' '.join(keyword) + ' '.join(menuplace))
+            for doc in docs:
+                row.append(doc.metadata)
+            rec = pd.DataFrame(row).reset_index()
+
+
 
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": original_question, "recommendations": rec.iloc[0].astype(str)})
@@ -270,15 +278,25 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_location = ''
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
+
         print('결과', {
             'answer': result, 
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
             'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
         })
+        
+        # 마르코프 추가
+        next_rec = None
+        # if isinstance(rec, pd.DataFrame):
+        id_t = df[df["MCT_NM"]==rec.iloc[0]["MCT_NM"]].id.values[0] # id 값
+        if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
+            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
+            
         return {
             'answer': result, 
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
-            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist(),
+            'next_rec': next_rec
         }
 
         
@@ -319,11 +337,16 @@ def get_hw_response(chat_state: ChatState):
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
-        print('개수', len(rec))
-        print('키워드 추천 문서:', rec.iloc[0].astype(str))
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+        if len(rec) ==0:
+            # fall back
+            docs = hugging_retriever_baseline.invoke(location + ' '.join(keyword) + ' '.join(menuplace))
+            for doc in docs:
+                row.append(doc.metadata)
+            rec = pd.DataFrame(row).reset_index()
+            
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": original_question, "recommendations": rec.iloc[0].astype(str)})
-        
         chat_state.info_menuplace = ['']
         chat_state.info_location = ''
         chat_state.info_keyword = ['']
@@ -334,16 +357,24 @@ def get_hw_response(chat_state: ChatState):
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
             'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
         })
+        # 마르코프 추가
+        next_rec = None
+        # if isinstance(rec, pd.DataFrame):
+        id_t = df[df["MCT_NM"]==rec.iloc[0]["MCT_NM"]].id.values[0] # id 값
+        if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
+            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
+
         return {
             'answer': result, 
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
-            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist(),
+            'next_rec': next_rec
         }
     elif response_type == "Multi-turn":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
         print(f"location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
         result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
-        return {'answer': result, 'title': '', 'address': ''}
+        return {'answer': result, 'title': '', 'address': '', 'next_rec': ''}
     else: 
         pass 
         
@@ -352,16 +383,16 @@ def get_hw_response(chat_state: ChatState):
         # docs 에 id 값 추가하고 rec 규격에 맞게 rec 파일 추출하기
         # next_rec을 결과로 출력할 수 있게 프롬프트 또는 response return 값 수정(?)
         # - TOP1 결과에 대해서만 제공, next_rec 값이 None인 경우도 있음 (방문이력X)
-    next_rec = None
-    if isinstance(rec, pd.DataFrame):
-        id_t = df[df.MCT_NM==rec.iloc[0].MCT_NM].id.values[0] # id 값
-        if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
-            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
-    print(f'--------------\n\nnextrec:{next_rec}\n\n\n--------------')
+    # next_rec = None
+    # if isinstance(rec, pd.DataFrame):
+    #     id_t = df[df.MCT_NM==rec.iloc[0].MCT_NM].id.values[0] # id 값
+    #     if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
+    #         next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
+    # print(f'--------------\n\nnextrec:{next_rec}\n\n\n--------------')
         
-    print(f"답변 타입:{response_type}")
-    print('여기서의 응답', result)
-    response = {"answer": result, 'title': rec['recommendation']['MCT_NM'].iloc[0], 'address': rec['recommendation']['ADDR'].iloc[0]}
-    print('응답', response)
+    # print(f"답변 타입:{response_type}")
+    # print('여기서의 응답', result)
+    # response = {"answer": result, 'title': rec['recommendation']['MCT_NM'].iloc[0], 'address': rec['recommendation']['ADDR'].iloc[0]}
+    # print('응답', response)
 
     return response

@@ -183,6 +183,9 @@ PROCEDURE:
         * And The 'original_question' is stored in the state for the next question and will be referenced later.
     * if the user's question is about Chat:
         * Just make the response for the user's query if it is general chat
+        * For all chats aside from recommendations and multi-turn interactions, provide a general response. 
+        * Even if the topic seems unrelated, maintain the output format and deliver an appropriate response.
+
 
 IMPORTANCE:
     * The response format should be like JSON. Only the results of the json format must be output.
@@ -282,6 +285,32 @@ EXAMPLES:
         "processing": "Based on the specific location of the airport and the expression 'nearby', it is necessary to make a recommendation using distance-based logic. Without additional information, proceed with distance-based recommendations."
         "original_question": "공항 근처 먹거리",        
         "response_type": "Distance-based"}}
+
+        <example6>
+        previous_gotten_info: 
+        {{"location":"", "menu_place":[""],"keyword": [""], "original_question": ""}}
+
+        User's question: 
+        오늘 날씨 좋다
+
+        Output:
+        {{"recommendation_factors":{{"location":"", "menu_place":[""],"keyword": [""], "business_type": [""]}},
+        "processing": "The conversation includes casual small talk about the weather. Select "Chat" for this scenario."
+        "original_question": "",
+        "response_type": "Chat"}}
+
+        <example7>
+        previous_gotten_info: 
+        {{"location":"", "menu_place":[""],"keyword": [""], "original_question": ""}}
+
+        User's question: 
+        ㅣㄴㅇㅁ라ㅜ닝ㅁ루니라ㅜㄴ밀
+
+        Output:
+        {{"recommendation_factors":{{"location":"", "menu_place":[""],"keyword": [""], "business_type": [""]}},
+        "processing": "It seems like the user just entered something random. Choose 'Chat' and do not collect any information."
+        "original_question": "",
+        "response_type": "Chat"}}        
 
 previous_gotten_info: 
 {{'location': {location}, 'menu_place':{menuplace}, 'keyword': {keyword}, 'original_question':{original_question}}} 
