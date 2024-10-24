@@ -105,8 +105,15 @@ def get_keywords_chat(chat_state: ChatState):
     keyword = chat_state.info_keyword
     business_type = chat_state.info_business_type
 
-    response = sub_task_detection(chat_state.message, location, menuplace, keyword)
-
+    # 질의 분류
+    response = sub_task_detection(
+        chat_state.message, 
+        chat_state.info_location, 
+        chat_state.info_menuplace, 
+        chat_state.info_keyword,
+        chat_state.original_question
+    )
+    
     response_type = json_format(response)["response_type"]
     print(f"답변 타입:{response_type}")
     print('답변', json_format(response))
