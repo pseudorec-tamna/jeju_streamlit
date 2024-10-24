@@ -496,7 +496,7 @@ def display_top_10(df):
 # trend_df 함수를 사용하여 데이터를 가져와 상위 10개 점포 정보를 사이드바에 표시
 def trends_info(eng_flag):
     # 트렌드 선택 버튼과 데이터 표시
-    with st.sidebar.expander("🔍 인기 맛집 트렌드!", expanded=True):
+    with st.sidebar.expander("🔍 인기 맛집 트렌드!", expanded=False):
         st.write("해당 그룹의 사람들이 많이 찾는 Top10를 추천해드립니다!")
 
         # 군집 설정 
@@ -530,6 +530,7 @@ def side_bar(eng_flag=False):
         # Clear chat history
         def clear_chat_history():
             ss.messages = []
+            chat_state: ChatState = ss.chat_state
         # 대화창 초기화 설명
         if eng_flag:
             st.write("#### 👇 Click the button below to reset the chat window.")    
@@ -557,6 +558,11 @@ def side_bar(eng_flag=False):
 
         # 나이대 설정 
         # age()
+
+        if eng_flag:
+            st.write("#### 👇 Discover the hottest restaurant trends for each group! Choose your preferred group and price range below, and we'll help you find the top spots! 🔥")
+        else:
+            st.write("#### 👇 각 그룹들의 인기 맛집 트렌드를 알려드립니다! 아래에서 원하시는 그룹과 가격대를 선택하고, 인기있는 식당을 찾아보세요! 🔥")        
 
         # 트렌드 데이터 출력 (사이드바)
         trends_info(eng_flag)
@@ -642,8 +648,8 @@ def url_setting(title, addr, max_h):
         return ""
         
     id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count = result
-    content = display_store_info(id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count)
-
+    content = display_store_info(id_url, addr, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count)
+    
     # 이미지가 있을 경우 사진 추가 (클릭 시 새 창에서 원본 보기)
     image_html = ""
     if img and img.strip():
