@@ -238,6 +238,7 @@ def get_hw_response(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message})
         rec = None # 변수 초기화
+        return {'answer': result, 'title':'', 'address': ''}    
 
     if response_type == "Distance-based":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm | StrOutputParser()
