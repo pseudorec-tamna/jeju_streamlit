@@ -99,6 +99,7 @@ class ChatState:
         chat_basic_mode: str | None = None,
         flag_trend: str | None = None,
         flag: str | None = None,
+        original_question: str = ''
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
     ) -> None: 
@@ -133,6 +134,7 @@ class ChatState:
         self.flag = flag
         self.model = self.embedding_model()
         self.vectorstore = self.chromadb_load()
+        self.original_question = original_question
 
     def chromadb_load(self):
         # chroma_client = chromadb.HttpClient(host='localhost', port=8000) 
