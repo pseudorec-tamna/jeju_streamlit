@@ -193,7 +193,8 @@ def get_hw_response(chat_state: ChatState):
         chat_state.message, 
         chat_state.info_location, 
         chat_state.info_menuplace, 
-        chat_state.info_keyword
+        chat_state.info_keyword,
+        chat_state.original_question
     )
 
     # 질의 유형 
