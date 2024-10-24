@@ -132,7 +132,7 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
         content += f"<p style='margin-top: 20px;'><b>💬 솔직 리뷰:</b> {review}</p>\n"
     
     if revisit and revisit.strip():
-        content += f"<p><b>🔄 다시 방문할까?</b> {'예! 꼭 또 가고 싶어요!!' if '매우 높음' in revisit else '예, 재방문 의사 있어요!' if '높음' in revisit else '음, 생각중...'}</p>\n"
+        content += f"<p><b>🔄 다시 방문할까?</b> {'예! 꼭 또 가고 싶어요!!' if '매우 높음' in revisit else '예, 재방문 의사 있어요!' if '높음' in revisit else '음, 재방문에 대해 고민 중...'}</p>\n"
     
     if reservation and reservation.strip():
         content += f"<p><b>📞 예약 필요해?</b> {'예, 필수!' if '높음' in reservation else '아니요, 대부분은 예약 없이 방문했어요!'}</p>\n"
