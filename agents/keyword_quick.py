@@ -138,7 +138,8 @@ def get_keywords_chat(chat_state: ChatState):
         chat_state.info_business_type = ['']
         return {'answer': result}
     else:
-        selected_words = '\n'.join(chat_state.selected_tags) if chat_state.selected_tags else "None"
+        tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
+        selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
         
         retrieved = df[df['ADDR_detail'].str.contains(location)]
         if len(retrieved) == 0:
