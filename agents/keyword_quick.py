@@ -141,6 +141,11 @@ def get_keywords_chat(chat_state: ChatState):
         tmp_rank = [f"{i+1} 순위로 " + j for i, j in enumerate(chat_state.selected_tags)]
         selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
 
+        menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
+        location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
+        keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
+        business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
+
         print('\n\n\n\n호출됐음\n\n\n\n')
         # 정확한 주소 검색 후 못찾으면 contains로 검색 
         retrieved = df[df['ADDR_detail'] == location]
