@@ -423,8 +423,19 @@ def hashtag(eng_flag=False):
     with st.expander(h_expander, expanded=False):
         # 선택된 태그 상태 관리
         if 'selected_tags' not in ss:
-            ss.selected_tags = []
-        
+            ss.selected_tags = [] 
+
+        # 선택된 태그 표시 및 관리
+        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
+        for n, tag in enumerate(ss.selected_tags):
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {reverse_hashtags_mapping.get(tag,tag)}**")
+            with col2:
+                if st.button("❌", key=f"remove_{reverse_hashtags_mapping.get(tag,tag)}"):
+                    ss.selected_tags.remove(tag)
+                    st.rerun()
+
         # 사용자 정의 태그 입력
         custom_tag = st.text_input(text_tmp, placeholder="#맛집" if not eng_flag else "#BestRestaurant", key="custom_tag")
         add_button = st.button("추가" if not eng_flag else "Add", key="add_tag")
@@ -443,23 +454,13 @@ def hashtag(eng_flag=False):
                     ss.selected_tags.remove(hashtags_mapping.get(tag, tag))
                 elif len(ss.selected_tags) < 3:
                     ss.selected_tags.append(hashtags_mapping.get(tag, tag))
+                    st.rerun()
                 else:
                     st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
 
-        # 선택된 태그 표시 및 관리
-        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
-        for n, tag in enumerate(ss.selected_tags):
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {reverse_hashtags_mapping.get(tag,tag)}**")
-            with col2:
-                if st.button("❌", key=f"remove_{reverse_hashtags_mapping.get(tag,tag)}"):
-                    ss.selected_tags.remove(tag)
-                    st.rerun()
-
         chat_state.selected_tags = ss.selected_tags
         if len(chat_state.selected_tags) > 0 :
-            tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
+            tmp_rank = [f"{i+1} 순위로 " + j for i, j in enumerate(chat_state.selected_tags)]
             # Append chat history when user_id changes
             chat_state.chat_history.append(
                 ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(tmp_rank))
@@ -552,6 +553,7 @@ def side_bar(eng_flag=False):
             ss.messages = []
             chat_state.chat_history = []
             chat_state.chat_history_all = []
+            chat_state.selected_tags = []
             
         # 대화창 초기화 설명
         if eng_flag:
