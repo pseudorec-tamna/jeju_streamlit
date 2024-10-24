@@ -140,37 +140,59 @@ def get_keywords_chat(chat_state: ChatState):
     else:
         tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
         selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
+
+        print('\n\n\n\n호출됐음\n\n\n\n')
+        # 정확한 주소 검색 후 못찾으면 contains로 검색 
+        retrieved = df[df['ADDR_detail'] == location]
+        if len(retrieved) == 0:
+            retrieved = df[df['ADDR_detail'].str.contains(location)]
         
-        retrieved = df[df['ADDR_detail'].str.contains(location)]
+        if len(retrieved) == 0:
+            retrieved = df[df['MCT_NM'] == location]
+
         if len(retrieved) == 0:
             retrieved = df[df['MCT_NM'].str.contains(location)]
-            if len(retrieved) == 0:
-                retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
+
+        if len(retrieved) == 0:
+            retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
+
         filtered_location = retrieved['ADDR_detail'].unique()
         filtered_business_type = business_type
+        print('수집된 location', filtered_location)
+        print('수집된 busyness type', filtered_business_type)
         hugging_retriever = hugging_vectorstore.as_retriever(
             search_type='similarity',
             search_kwargs={
                 'filter': {
-                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"busyness_type":business}for business in filtered_business_type]
+                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"type":business}for business in filtered_business_type]
                 }
-            }
+            }, 
         )
+        print(hugging_retriever)
         row = []
+        # print("chat_state.message", chat_state.message)
         docs = hugging_retriever.invoke(chat_state.message)
+        print('docs', docs)
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
-        print('키워드 추천 문서:', rec.iloc[0].to_dict())
-        
+        print('개수', len(rec))
+        print('키워드 추천 문서:', rec.iloc[0].astype(str))
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template2 | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message, 
-                            "recommendations": rec.iloc[0].to_dict(), 
-                            "selected_tags": selected_words})
-            
-        print(f"답변 타입: 해시태그 keyword-based")
-        print('여기서의 응답', result)
-        response = {"answer": result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
-        print('응답', response)
-
-        return response
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].astype(str), "selected_tags": selected_words})
+        
+        chat_state.info_menuplace = ['']
+        chat_state.info_location = ''
+        chat_state.info_keyword = ['']
+        chat_state.info_business_type = ['']
+        print('이게 문제', rec['name'][:min(3, len(rec['name']))].tolist())
+        print('결과', {
+            'answer': result, 
+            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+        })
+        return {
+            'answer': result, 
+            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+        }

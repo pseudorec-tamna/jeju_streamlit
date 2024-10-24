@@ -315,7 +315,7 @@ def get_hw_response(chat_state: ChatState):
             search_type='similarity',
             search_kwargs={
                 'filter': {
-                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"busyness_type":business}for business in filtered_business_type]
+                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"type":business}for business in filtered_business_type]
                 }
             }, 
         )
