@@ -78,11 +78,7 @@ hugging_embeddings = HuggingFaceEmbeddings(
     model_kwargs=model_kwargs,
     encode_kwargs=encode_kwargs,)
 
-# hugging_vectorstore = Chroma.from_documents(
-#     documents=documents,
-#     embedding=hugging_embeddings,
-#     persist_directory="./chroma_db"          # Save the embeddings at the first time
-# )
+
 hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=hugging_embeddings)        # Load the embeddings
 hugging_retriever = hugging_vectorstore.as_retriever()
 
@@ -138,15 +134,17 @@ def get_keywords_chat(chat_state: ChatState):
         chat_state.info_business_type = ['']
         return {'answer': result}
     else:
-        tmp_rank = [f"{i+1} 순위로 " + j for i, j in enumerate(chat_state.selected_tags)]
-        selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
-
         menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
         location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
         keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
         business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
-
+          
+        tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
+        selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
+        
         print('\n\n\n\n호출됐음\n\n\n\n')
+        print(f'selected_words: {selected_words}')
+        print(f'location: {location}\nbusiness_type: {business_type}')
         # 정확한 주소 검색 후 못찾으면 contains로 검색 
         retrieved = df[df['ADDR_detail'] == location]
         if len(retrieved) == 0:
