@@ -93,8 +93,8 @@ def tags2dict(input_str):
             result_dict[key] = int(value.replace(',', ''))  # 쉼표 제거 후 정수로 변환
         else:
             # '::'가 없는 경우의 처리 (예: '특징' 등)
-            result_dict[item] = 1
-            print(f"Invalid item format: {item}")
+            top_5 = None
+            # print(f"Invalid item format: {item}")
             
     # 숫자가 큰 순서대로 정렬하여 상위 5개 추출
     top_5 = dict(sorted(result_dict.items(), key=lambda x: x[1], reverse=True)[:5])
@@ -123,20 +123,22 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
         content += "<p style='margin-bottom: 0;'><b>🍴 인기 메뉴 (Top 5):</b></p>\n"
         content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
         tag_dict = tags2dict(menu_tags)
-        for key, value in tag_dict.items():
-            content += f"<div style='background-color: #ffedda; border-radius: 10px; padding: 10px; min-width: 100px; text-align: center;'>"
-            content += f"<b>{key}</b><br><span style='color: #ff5722;'>{value}회 언급</span>"
-            content += "</div>"
+        if tag_dict:
+            for key, value in tag_dict.items():
+                content += f"<div style='background-color: #ffedda; border-radius: 10px; padding: 10px; min-width: 100px; text-align: center;'>"
+                content += f"<b>{key}</b><br><span style='color: #ff5722;'>{value}회 언급</span>"
+                content += "</div>"
         content += "</div>\n"
         
     if feature_tags and len(feature_tags) > 5:
         content += "<p style='margin-bottom: 0; margin-top: 20px;'><b>🌟 이곳의 매력 포인트 (Top 5):</b></p>\n"
         content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
         tag_dict = tags2dict(feature_tags)
-        for key, value in tag_dict.items():
-            content += f"<div style='background-color: #ffe4f5; border-radius: 10px; padding: 10px; min-width: 100px; text-align: center;'>"
-            content += f"<b>{key}</b><br><span style='color: #e91e63;'>{value}회 언급</span>"
-            content += "</div>"
+        if tag_dict:
+            for key, value in tag_dict.items():
+                content += f"<div style='background-color: #ffe4f5; border-radius: 10px; padding: 10px; min-width: 100px; text-align: center;'>"
+                content += f"<b>{key}</b><br><span style='color: #e91e63;'>{value}회 언급</span>"
+                content += "</div>"
         content += "</div>"
 
     if review and review.strip():
