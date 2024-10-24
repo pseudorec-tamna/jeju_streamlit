@@ -101,7 +101,7 @@ def tags2dict(input_str):
 
     return top_5
 
-def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count):
+def display_store_info(id_url, addr, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count):
     content = "<div style='font-family: sans-serif; padding: 10px;'>"   
     menu_tags = menu_tags.strip()
     feature_tags = feature_tags.strip()
@@ -115,10 +115,14 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
     
     if booking and booking.strip():
         content += f"<p><b>📅 바로 예약하기:</b> <a href='{booking}' style='text-decoration: none; color: #007bff;'>여기를 클릭</a></p>\n"
-    
+
+    # 주소 정보 추가
+    if addr and addr.strip():
+        content += f"<p><b>📍 주소:</b> {addr}</p>\n"    
+
     if review_count and str(review_count) > "0":
         content += f"<p><b>🔢 리뷰 수:</b> {review_count} 개</p>\n"
-    
+        
     if menu_tags and len(menu_tags) > 5:
         tag_dict = tags2dict(menu_tags)
         if tag_dict:
