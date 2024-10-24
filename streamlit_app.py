@@ -10,6 +10,7 @@ from utils.prepare import (
     get_logger,
     hashtags_mapping
 )
+from streamlit_modal import Modal
 from utils.query_parsing import parse_query
 from components.llm import CallbackHandlerDDGStreamlit
 from agents.final_pretty import df_filter, display_store_info
@@ -43,6 +44,7 @@ from utils.streamlit.helpers import (
 from streamlit_modal import Modal
 import streamlit.components.v1 as components
 from tamla import get_bot_response
+from components.sql_trend import trend_df
 
 # 로그 설정 
 logger = get_logger()
@@ -160,7 +162,7 @@ def open_ai_chat(eng_flag=False):
             # Check if title and address exists, and display the relevant URL info
             info_box = ""
             if response["title"] and response["address"]:
-                info_box = url_setting(response["title"], response["address"])   
+                info_box = url_setting(response["title"], response["address"], 100)   
             
             # Display the "complete" status - custom or default
             if status:
@@ -321,26 +323,33 @@ def price(eng_flag):
     else:
         tmp = "가격대 설정"
         tmp_detail = "1인 기준 가격대를 선택해주세요"
+
+    # chat_state에 price_range가 없으면 기본값 설정
+    if chat_state.price_range is None:
+        chat_state.price_range = [1000, 1000000]
+
     # Settings
-    with st.expander(tmp, expanded=False):
-        # 가격대 슬라이더
-        price_range = st.slider(
-            tmp_detail,
-            min_value=5000,
-            max_value=200000,
-            value=(5000, 200000),  # Default range
-            step=5000,
-            format="₩%d",
-        )
-        list_price = list(price_range)
-        if list_price[-1] == 200000:
-            list_price[-1] = 1000000
-        chat_state.price_range = list_price
-    # st.write(f"선택된 가격대: ₩{price_range[0]} ~ ₩{price_range[1]}")
+    # with st.expander(tmp, expanded=False):
+    # 가격대 슬라이더
+    price_range = st.slider(
+        tmp_detail,
+        min_value=1000,
+        max_value=300000,
+        value=(1000, 300000),  # Default range for slider
+        step=5000,
+        format="₩%d",
+    )
+
+    list_price = list(price_range)
+    if list_price[-1] == 300000:
+        list_price[-1] = 1000000
+
+    # chat_state.price_range 업데이트
+    chat_state.price_range = list_price
 
 def ref_dropdown():
     # Default mode
-    with st.expander("나이대 선택", expanded=False):
+    with st.expander("나이대 선택", expanded=True):
         ss.default_mode = st.selectbox(
             "나이대를 선택해주시면 더 맞춤형 서비스를 제공해드리겠습니다.",
             mode_options,
@@ -391,7 +400,7 @@ def hashtag(eng_flag=False):
     # hashtags_mapping의 value를 key로 하고 key를 value로 하는 역매핑 생성
     reverse_hashtags_mapping = {v: k for k, v in hashtags_mapping.items()}
 
-    with st.expander(h_expander, expanded=True):
+    with st.expander(h_expander, expanded=False):
         # 선택된 태그 상태 관리
         if 'selected_tags' not in ss:
             ss.selected_tags = []
@@ -440,6 +449,69 @@ def hashtag(eng_flag=False):
 
         print(chat_state.selected_tags)
 
+# 트렌드를 선택하는 함수
+def trends_buttons():
+    # 트렌드 선택 드롭다운 메뉴 설정
+    # st.sidebar.markdown("### 트렌드 선택")
+
+    # 선택할 수 있는 트렌드 옵션
+    options = {
+        '현지인': 'local',
+        '남성': 'male',
+        '여성': 'female',
+        '20대': '20',
+        '30대': '30',
+        '40대': '40',
+        '50대': '50',
+        '60대': '60'
+    }
+
+    # 드롭다운 메뉴로 트렌드 선택
+    selected_option = st.selectbox(
+        "원하는 그룹을 선택하세요: (기본값은 '제주도 현지인' 입니다.)",
+        options.keys(),  # 표시할 옵션 리스트
+        index=0  # 기본값은 '현지인'으로 설정
+    )
+
+    # 선택된 트렌드를 chat_state에 저장
+    chat_state.flag_trend = options[selected_option]
+
+# Modal 창과 HTML 스타일을 사용한 링크 형식의 텍스트 생성 함수
+def display_top_10(df):
+    df_top_10 = df.head(10)
+
+    info_boxes = []
+    for index, row in df_top_10.iterrows():
+        store_name = row['MCT_NM']
+        addr = row['ADDR']
+        # url_setting 함수로 HTML 형식의 가게 정보 생성
+        info_box = url_setting(store_name, addr, 30)
+        info_boxes.append(info_box)
+
+    # 저장된 HTML 블록을 순차적으로 markdown에서 렌더링
+    for info_box in info_boxes:
+        st.markdown(info_box, unsafe_allow_html=True)
+
+# trend_df 함수를 사용하여 데이터를 가져와 상위 10개 점포 정보를 사이드바에 표시
+def trends_info(eng_flag):
+    # 트렌드 선택 버튼과 데이터 표시
+    with st.sidebar.expander("🔍 인기 맛집 트렌드!", expanded=True):
+        st.write("해당 그룹의 사람들이 많이 찾는 Top10를 추천해드립니다!")
+
+        # 군집 설정 
+        trends_buttons()
+
+        # 가격대 설정을 박스 안에 포함 (st.container로 감쌈)
+        price(eng_flag)
+
+        # trend_df에서 데이터를 가져와 상위 10개만 표시
+        df = trend_df(chat_state)
+        print(df)
+        if df.empty:
+            st.write("앗! 데이터가 없습니다.")
+        else:
+            display_top_10(df)
+
 def side_bar(eng_flag=False):
     ####### Sidebar #######
     with st.sidebar:
@@ -485,8 +557,8 @@ def side_bar(eng_flag=False):
         # 나이대 설정 
         # age()
 
-        # 가격대 설정 
-        # price(eng_flag)
+        # 트렌드 데이터 출력 (사이드바)
+        trends_info(eng_flag)
 
         # food_selection
         # food_selection()
@@ -561,7 +633,7 @@ def questions_recommending(eng_flag=False):
     ss.clicked_query = None  # Reset for next use
     return clicked_sample_query
 
-def url_setting(title, addr):    
+def url_setting(title, addr, max_h):    
     # df_filter 호출 후 결과값이 None인지 체크
     result = df_filter(title, addr)
     if result is None:
@@ -577,7 +649,7 @@ def url_setting(title, addr):
         image_html = f"""
             <div>
                 <a href="{id_url}" target="_blank">
-                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 600px; max-height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 2px;">
+                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 600px; max-height: {max_h}px; object-fit: cover; border-radius: 10px; margin-bottom: 2px;">
                 </a>
             </div>
         """

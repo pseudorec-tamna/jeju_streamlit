@@ -96,6 +96,7 @@ class ChatState:
         info_keyword: list[str] = [''],
         info_business_type: list[str] = [''],
         chat_basic_mode: str | None = None,
+        flag_trend: str | None = None,
         flag: str | None = None,
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
@@ -127,6 +128,7 @@ class ChatState:
         self.recommend_term = recommend_term
         self.memory = memory
         self.chat_basic_mode = chat_basic_mode
+        self.flag_trend = flag_trend
         self.flag = flag
 
     # @property
