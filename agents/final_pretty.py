@@ -120,26 +120,26 @@ def display_store_info(id_url, booking, img, menu_tags, feature_tags, review, re
         content += f"<p><b>🔢 리뷰 수:</b> {review_count} 개</p>\n"
     
     if menu_tags and len(menu_tags) > 5:
-        content += "<p style='margin-bottom: 0;'><b>🍴 인기 메뉴 (Top 5):</b></p>\n"
-        content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
         tag_dict = tags2dict(menu_tags)
         if tag_dict:
+            content += "<p style='margin-bottom: 0;'><b>🍴 인기 메뉴 (Top 5):</b></p>\n"
+            content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
             for key, value in tag_dict.items():
                 content += f"<div style='background-color: #ffedda; border-radius: 10px; padding: 10px; min-width: 100px; text-align: center;'>"
                 content += f"<b>{key}</b><br><span style='color: #ff5722;'>{value}회 언급</span>"
                 content += "</div>"
-        content += "</div>\n"
+            content += "</div>\n"
         
     if feature_tags and len(feature_tags) > 5:
-        content += "<p style='margin-bottom: 0; margin-top: 20px;'><b>🌟 이곳의 매력 포인트 (Top 5):</b></p>\n"
-        content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
         tag_dict = tags2dict(feature_tags)
-        if tag_dict:
+        if tag_dict:        
+            content += "<p style='margin-bottom: 0; margin-top: 20px;'><b>🌟 이곳의 매력 포인트 (Top 5):</b></p>\n"
+            content += "<div style='display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0;'>"
             for key, value in tag_dict.items():
                 content += f"<div style='background-color: #ffe4f5; border-radius: 10px; padding: 10px; min-width: 100px; text-align: center;'>"
                 content += f"<b>{key}</b><br><span style='color: #e91e63;'>{value}회 언급</span>"
                 content += "</div>"
-        content += "</div>"
+            content += "</div>"
 
     if review and review.strip():
         content += f"<p style='margin-top: 20px;'><b>💬 솔직 리뷰:</b> {review}</p>\n"
