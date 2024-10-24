@@ -10,10 +10,12 @@ from langchain.chains import create_sql_query_chain
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from recommendation.prompt import sub_task_detection_prompt, address_extract_prompt, sql_task_detection_prompt
+from recommendation.prompt import sub_task_detection_prompt, address_extract_prompt
 import google.generativeai as genai
 from dotenv import load_dotenv
 from utils.prepare import GEMINI_API_KEY
+
+
 def json_format(response):
     response = response.replace("json", '')
     response = response.replace("```", '').strip()
@@ -51,7 +53,7 @@ def sub_task_detection(question, location, menuplace, keyword, original_question
         sub_task_detection_prompt
     )
     chain = prompt | llm | StrOutputParser()
-    response = chain.invoke({"user_question": question, "location":location, "menuplace": menuplace, "keyword": keyword, "original_quesetion": original_question})
+    response = chain.invoke({"user_question": question, "location":location, "menuplace": menuplace, "keyword": keyword, "original_question": original_question})
 
     """
     5개의 Type 중 하나를 선택 
@@ -61,15 +63,4 @@ def sub_task_detection(question, location, menuplace, keyword, original_question
     Distance-based, Attribute-based, Content-based
     """
     # response_type = json_format(response)["response_type"]
-    return response
-def sql_task_detection(question):
-    import os 
-    load_dotenv()
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GEMINI_API_KEY)
-    prompt = ChatPromptTemplate.from_template(
-        sql_task_detection_prompt
-    )
-    chain = prompt | llm | StrOutputParser()
-    response = chain.invoke({"user_question": question})
-
     return response

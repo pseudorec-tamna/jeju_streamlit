@@ -17,7 +17,6 @@ from utils.client import MysqlClient
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from agents.hyeonwoo import sub_task_detection, json_format
-from recommendation.utils import sql_task_detection
 # df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
 # df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
 # df = df.reset_index(drop=True)
