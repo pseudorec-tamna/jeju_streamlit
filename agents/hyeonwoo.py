@@ -244,8 +244,8 @@ def get_hw_response(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm | StrOutputParser()
         coord = get_coordinates_by_question(chat_state.message)
         # coord = (1, 0)
-        st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
-        print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
+        st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요.")
+        # print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
         if coord != (0,0):
             # from IPython.display import IFrame
             latitude, longitude = coord  # coord에서 위도와 경도 추출
