@@ -193,6 +193,7 @@ hugging_embeddings = HuggingFaceEmbeddings(
 # )
 hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=hugging_embeddings)        # Load the embeddings
 hugging_retriever_baseline = hugging_vectorstore.as_retriever()
+# hugging_retriever_distance = hugging_vectorstore.as_retriever()
 
 
 # print('렛츠고ㅇ', hugging_retriever.invoke('중문'))
@@ -212,35 +213,36 @@ def get_hw_response(chat_state: ChatState):
         google_api_key=chat_state.google_api_key
     )
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
-    menuplace = chat_state.info_menuplace
-    location = chat_state.info_location
-    keyword = chat_state.info_keyword
-    business_type = chat_state.info_business_type
 
-    response = sub_task_detection(chat_state.message, location, menuplace, keyword)
+    response = sub_task_detection(
+        chat_state.message, 
+        chat_state.info_location, 
+        chat_state.info_menuplace, 
+        chat_state.info_keyword
+    )
     response_type = json_format(response)["response_type"]
     recommendation_factors = json_format(response)["recommendation_factors"]
 
     if (recommendation_factors['location'] == '제주' or recommendation_factors['location'] == '제주도') and response_type == "Keyword-based":
         recommendation_factors['location'] = ''
         response_type = "Multi-turn"
+    
+    menuplace = chat_state.info_menuplace = recommendation_factors['menu_place'] = list(set(recommendation_factors['menu_place'] + chat_state.info_menuplace))
+    location = chat_state.info_location = recommendation_factors['location'] = recommendation_factors['location'] if chat_state.info_location == '' else chat_state.info_location + recommendation_factors['location']
+    keyword = chat_state.info_keyword = recommendation_factors['keyword'] = list(set(recommendation_factors['keyword'] + chat_state.info_keyword))
+    business_type = chat_state.info_business_type = recommendation_factors['business_type'] = list(set(recommendation_factors['business_type'] + chat_state.info_business_type))
+
     print(f"답변 타입: {response_type}")
     print('답변', json_format(response))
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message})
-
         rec = None # 변수 초기화
-        print(f"추천 타입:{response_type}")
-        print(f"추천 요소:{recommendation_factors}")
-        menuplace = chat_state.info_menuplace = recommendation_factors['menu_place']
-        location = chat_state.info_location = recommendation_factors['location']
-        keyword = chat_state.info_keyword = recommendation_factors['keyword']
-        business_type = chat_state.info_business_type = recommendation_factors['business_type']
 
     if response_type == "Distance-based":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_prompt_template | llm | StrOutputParser()
         coord = get_coordinates_by_question(chat_state.message)
+        # coord = (1, 0)
         st.write("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
         print("정확한 주소를 지도에서 검색후에 클릭해주세요 !!")
         if coord != (0,0):
@@ -262,13 +264,32 @@ def get_hw_response(chat_state: ChatState):
                 time.sleep(5)
             
             rec = coordinates_based_recommendation((longitude, latitude), df)
-            print('여기 조사', rec)
-            rec = rec.reset_index()
-            print('프린트', rec['MCT_NM'][0])
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec['MCT_NM'][0]})  
-            return {'answer': result, 'title': rec['MCT_NM'][0], 'address': rec['ADDR'][0]}
+            mct_nm_list = rec["MCT_NM"].tolist()
+
+            row = []
+            hugging_retriever_distance = hugging_vectorstore.as_retriever(
+                search_kwargs={
+                    'filter': {
+                        "name": {"$in": mct_nm_list}  # "name" 필드가 mct_nm_list에 포함되는지 확인
+                    }
+                }
+            )
+            docs = hugging_retriever_distance.invoke(chat_state.message)
+            for doc in docs:
+                row.append(doc.metadata)
+            rec = pd.DataFrame(row).reset_index()
+
+            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].astype(str)})
+
+            chat_state.info_menuplace = ['']
+            chat_state.info_location = ''
+            chat_state.info_keyword = ['']
+            chat_state.info_business_type = ['']
+            return {'answer': result, 'title': rec.iloc[0]['name'], 'address': rec.iloc[0]['full_location']}
         else:
             docs = hugging_retriever_baseline.invoke(chat_state.message)
+            row = []
             for doc in docs:
                 row.append(doc.metadata)
             rec = pd.DataFrame(row).reset_index()
@@ -284,7 +305,6 @@ def get_hw_response(chat_state: ChatState):
         
     elif response_type == "Keyword-based":
         print('\n\n\n\n호출됐음\n\n\n\n')
-        print(f"location:{location}")
         # 정확한 주소 검색 후 못찾으면 contains로 검색 
         retrieved = df[df['ADDR_detail'] == location]
         if len(retrieved) == 0:
