@@ -49,8 +49,14 @@ def get_sql_chat(chat_state: ChatState):
     )
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
 
-
-    response = sql_task_detection(chat_state.message)
+    # 질의 분류
+    response = sub_task_detection(
+        chat_state.message, 
+        chat_state.info_location, 
+        chat_state.info_menuplace, 
+        chat_state.info_keyword,
+        chat_state.original_question
+    )
 
     response_type = json_format(response)["response_type"]
     print(f"답변 타입:{response_type}")
