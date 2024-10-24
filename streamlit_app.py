@@ -553,7 +553,7 @@ def side_bar(eng_flag=False):
             ss.messages = []
             chat_state.chat_history = []
             chat_state.chat_history_all = []
-            chat_state.selected_tags = []
+            # chat_state.selected_tags = []
             
         # 대화창 초기화 설명
         if eng_flag:
