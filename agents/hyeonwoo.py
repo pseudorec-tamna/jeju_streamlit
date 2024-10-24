@@ -226,7 +226,7 @@ def get_hw_response(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message})
         rec = None # 변수 초기화
-        return {'answer': result}    
+        return {'answer': result, 'title': '', 'address': ''}    
 
     if response_type == "Distance-based":
         # coord = get_coordinates_by_question(chat_state.message)
@@ -360,7 +360,8 @@ def get_hw_response(chat_state: ChatState):
         # 마르코프 추가
         next_rec = None
         # if isinstance(rec, pd.DataFrame):
-        id_t = df[df["MCT_NM"]==rec.iloc[0]["MCT_NM"]].id.values[0] # id 값
+
+        id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
         if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
             next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
 
