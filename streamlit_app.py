@@ -187,16 +187,25 @@ def open_ai_chat(eng_flag=False):
             # Add the response to the chat history
             chat_state.chat_history.append((prompt, answer))
             # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-            message_placeholder.markdown(answer) # fix_markdown
+
+            # 로봇 말 생성
+            # message_placeholder.markdown(answer) # fix_markdown
+
             if len(info_box) > 0:
-                st.markdown(wrap_info_box(info_box), unsafe_allow_html=True)
+                info_box_html = wrap_info_box(info_box)
+                # st.markdown(wrap_info_box(info_box), unsafe_allow_html=True)
+            else: 
+                info_box_html = ""
 
         # Assistant 메시지와 info_box를 함께 추가 (HTML 포함)
-        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{wrap_info_box(info_box)}"})
+        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box_html}"})
+
         # 페이지 마지막으로 스크롤 자동화
-        scroll_to_bottom()
+        scroll_to_bottom()    
+
         # 페이지 새로고침
         st.rerun()
+ 
     # else:
     #     st.info("OpenAI API 키를 입력해주세요.", icon="🗝️")
 
@@ -416,17 +425,6 @@ def hashtag(eng_flag=False):
         if 'selected_tags' not in ss:
             ss.selected_tags = []
         
-        # 선택된 태그 표시 및 관리
-        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
-        for n, tag in enumerate(ss.selected_tags):
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {reverse_hashtags_mapping.get(tag,tag)}**")
-            with col2:
-                if st.button("❌", key=f"remove_{reverse_hashtags_mapping.get(tag,tag)}"):
-                    ss.selected_tags.remove(tag)
-                    st.rerun()
-
         # 사용자 정의 태그 입력
         custom_tag = st.text_input(text_tmp, placeholder="#맛집" if not eng_flag else "#BestRestaurant", key="custom_tag")
         add_button = st.button("추가" if not eng_flag else "Add", key="add_tag")
@@ -447,6 +445,17 @@ def hashtag(eng_flag=False):
                     ss.selected_tags.append(hashtags_mapping.get(tag, tag))
                 else:
                     st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
+
+        # 선택된 태그 표시 및 관리
+        st.markdown("### " + ("우선순위 최대 3가지" if not eng_flag else "Top 3 Priorities"))
+        for n, tag in enumerate(ss.selected_tags):
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown(f"**⭐️ {'순위' if not eng_flag else 'Priority'} {n+1} : {reverse_hashtags_mapping.get(tag,tag)}**")
+            with col2:
+                if st.button("❌", key=f"remove_{reverse_hashtags_mapping.get(tag,tag)}"):
+                    ss.selected_tags.remove(tag)
+                    st.rerun()
 
         chat_state.selected_tags = ss.selected_tags
         if len(chat_state.selected_tags) > 0 :
