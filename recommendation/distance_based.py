@@ -126,9 +126,9 @@ def recommend_restaurant_by_distance(coords, df):
     tmp['distance'] = calculate_distances(coords, df)
 
     # 2km 이내 추출
-    within_km = tmp[tmp['distance'] <= 2]
+    within_km = tmp[tmp['distance'] <= 5]
     if within_km.shape[0] == 0:
-        within_km = tmp[tmp['distance'] <= 5]
+        within_km = tmp[tmp['distance'] <= 10]
     print('recommend_restaurant_by_distance함수')
     return within_km
 
