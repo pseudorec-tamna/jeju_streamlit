@@ -110,7 +110,7 @@ visit_poi_df = pd.read_csv(path_visit_additional_info)
 #       }
 #   )
 #   documents.append(document)
-å
+
 #
 
 
