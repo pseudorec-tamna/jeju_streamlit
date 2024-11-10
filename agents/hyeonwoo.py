@@ -131,7 +131,6 @@ def get_hw_response(chat_state: ChatState):
     # 벡터DB 로드
     hugging_vectorstore = chat_state.vectorstore
     hugging_retriever_baseline = hugging_vectorstore.as_retriever()
-
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
     
     
@@ -143,9 +142,14 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_keyword,
         chat_state.original_question
     )
+    if response == '': # 욕설 등으로 인해서 출력이 제대로 완성되지 않은 경우 
+        # 여기에 어떤 내용을 채울지에 대한 고민 
+        return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
+
     print('여기서부터 분석 시작')
 
     print('------')
+
     # 질의 유형 
     response_type = json_format(response)["response_type"]
 
@@ -240,7 +244,10 @@ def get_hw_response(chat_state: ChatState):
         id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
         if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
             next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
-        
+
+        if result == '': 
+            return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
+
         return {
             'answer': result, 
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
@@ -265,24 +272,70 @@ def get_hw_response(chat_state: ChatState):
             retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
         
         filtered_location = retrieved['ADDR_detail'].unique()
+        menu_keywords = [c for c in chat_state.info_menuplace if c != '']
+
+        # 메뉴 키워드가 하나일 경우 직접 조건을 적용, 여러 개일 경우 $or 조건을 적용
+        df['contains_keyword'] = df.apply(lambda row: any(keyword in row['menus'] or keyword in row['MCT_NM'] for keyword in menu_keywords), axis=1)
+        mct_nm_list = list(df[df["contains_keyword"]]["MCT_NM"].unique())
+        del df['contains_keyword']  # 삭제 후에 다른 코드와 연결
+
+        # "name" 필드에 대한 필터 조건을 미리 준비
+        name_condition = {"name": {"$in": mct_nm_list}} if len(mct_nm_list) > 0 else {}
+
+        # hugging_retriever 설정
         hugging_retriever = hugging_vectorstore.as_retriever(
             search_type='similarity',
             search_kwargs={
+                'k': 100,
                 'filter': {
-                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"type":business}for business in business_type]
+                    "$and": [
+                        {"location": {"$in": list(filtered_location)}},
+                        *([name_condition] if name_condition else [])  # name_condition이 있으면 추가
+                    ]
                 }
             }
         )
+
         row = []
         # 키워드를 넣어 문서 검색
-        docs = hugging_retriever.invoke(location + ' '.join(keyword) + ' '.join(menuplace))
+        docs = hugging_retriever.invoke(
+            ' '.join(keyword)
+        )
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))| recommendation_keyword_prompt_template | llm | StrOutputParser()
+        # print(rec["location"].values)
+
+        # print(rec[["name", "average_score", "review_counts"]])
+        # print(rec.columns)
+        """
+        답변 {'recommendation_factors': {'location': '서귀포시', 'menu_place': ['고기국수'], 'keyword': ['현지인들이 많이 가는'], 'business_type': ['단품요리 전문', '가정식', '분식']}, 'processing': "The user provided '서귀포시' as a location, which means they want to find a '고기국수' restaurant in '서귀포시'. Since the user has narrowed down their search by providing a location, and we have the 'keyword' and 'menu_place' from the previous conversation, this time we will choose 'Keyword-based' recommendation.", 'original_question': '제주도 고기국수 맛집 중에서 현지인들이 많이 가는 곳 추천해줘. 서귀포시', 'response_type': 'Keyword-based'}
+        # 변수 정보 : ['index', 'average_price', 'average_score', 'companion_info', 'feature_info', 'full_location', 'location', 'menu_info', 'name', 'payment_method', 'reservation_info', 'review_counts', 'review_summary', 'revisit_info', 'type', 'waiting_info']
+        # average_score or review_counts를 기준으로 정렬하기 
+        """
+        # Reranking 돌리면 될 듯 
+        # 빈 값이 있는지 확인
+        # 'v_review_cnt', 'b_review_cnt'
+        if rec.shape[0] != 0:
+            print(rec.columns)
+            has_missing_review_counts = (rec["review_counts"] == '') | (rec["review_counts"].isna())
+            has_missing_average_score = (rec["average_score"] == '') | (rec["average_score"].isna())
+
+            # 조건에 따라 정렬 수행
+            if has_missing_review_counts.any() and has_missing_average_score.any():
+                # 두 열 모두 기준으로 내림차순 정렬
+                rec = rec.sort_values(by=["review_counts", "average_score"], ascending=[False, False]).reset_index(drop=True)
+            elif has_missing_review_counts.any():
+                # 'review_counts' 기준으로만 내림차순 정렬
+                rec = rec.sort_values(by=["review_counts"], ascending=[False]).reset_index(drop=True)
+
+        # Reranking 돌리면 될 듯 
+        ## 네이버 평점 통해서 돌리기 + 최소 threshold 
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
         
         # 검색이 안된 경우
-        if len(rec) ==0:
+        if len(rec) == 0:
+            print("fallback 돌아감?")
             # fall back
             docs = hugging_retriever_baseline.invoke(location + ' '.join(keyword) + ' '.join(menuplace))
             for doc in docs:
@@ -304,6 +357,8 @@ def get_hw_response(chat_state: ChatState):
         id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
         if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
             next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
+        if result == '': 
+            return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
 
         return {
             'answer': result, 
@@ -315,6 +370,8 @@ def get_hw_response(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
         print(f"멀티턴 - 추천요소:::: location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
         result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
+        if result == '': 
+            return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
         return {'answer': result, 'title': '', 'address': '', 'next_rec': ''}
     else: 
         pass 
