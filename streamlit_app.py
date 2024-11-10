@@ -167,7 +167,9 @@ def open_ai_chat(eng_flag=False):
             print(f"현재 사용 봇: {chat_state.chat_mode.value}")
             response = get_bot_response(chat_state)
             answer = response["answer"]
-
+            if answer == '': 
+                answer = "주어진 쿼리에 부적절한 내용이 포함되어있습니다. 다시 질문 주시겠어요?" # 여기에 원하는 코멘트를 강제로 삽입해서 출력하는 방법이 있음 
+            
             # Check if title and address exists, and display the relevant URL info
             info_box = []
             if response["title"] and response["address"]:
