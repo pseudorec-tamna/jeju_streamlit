@@ -4,7 +4,6 @@ import google.generativeai as genai
 import os
 import streamlit as st
 from langchain_community.utilities import SQLDatabase
-from langchain.chains import create_sql_query_chain
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -72,6 +71,8 @@ path_transition_matrix = './data/transition_matrix.csv'
 transition_matrix_df = pd.read_csv(path_transition_matrix)
 visit_poi_df = pd.read_csv(path_visit_additional_info)
 
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # documents = []
 # for row in df.iterrows():
 #   document = Document(
@@ -111,10 +112,6 @@ visit_poi_df = pd.read_csv(path_visit_additional_info)
 #   )
 #   documents.append(document)
 
-#
-
-
-
 def load_memory(input, chat_state):
 
     memory_vars = chat_state.memory.load_memory_variables({})
@@ -123,6 +120,8 @@ def load_memory(input, chat_state):
     return memory_vars.get("chat_history", [])
 
 def get_hw_response(chat_state: ChatState):
+    # 한국어 Or 영어
+    flag_eng = chat_state.flag_eng
 
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
@@ -170,16 +169,18 @@ def get_hw_response(chat_state: ChatState):
     location = chat_state.info_location = recommendation_factors['location'] = recommendation_factors['location'] if (chat_state.info_location == '' or chat_state.info_location == recommendation_factors['location']) else chat_state.info_location + recommendation_factors['location']
     keyword = chat_state.info_keyword = recommendation_factors['keyword'] = list(set(recommendation_factors['keyword'] + chat_state.info_keyword))
     business_type = chat_state.info_business_type = recommendation_factors['business_type'] = list(set(recommendation_factors['business_type'] + chat_state.info_business_type))
-
+    query_rewrite = chat_state.query_rewrite = recommendation_factors["query_rewrite"] 
     
-    if response_type == "Chat":
+    if response_type == "Chat": 
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message})
+        result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})
         rec = None # 변수 초기화
         return {'answer': result, 'title': '', 'address': ''}    
 
     elif response_type == "Distance-based":
         # coord = get_coordinates_by_question(chat_state.message)
+        with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
+            file.write(location)
 
         st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요.")
         st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
@@ -221,10 +222,8 @@ def get_hw_response(chat_state: ChatState):
                 row.append(doc.metadata)
             rec = pd.DataFrame(row).reset_index()
 
-
-
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": original_question, "recommendations": rec.iloc[0].astype(str)})
+        result = chain.invoke({"question": original_question, "recommendations": rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown(), "flag_eng":flag_eng})
 
         # 추천 후 초기화
         chat_state.info_menuplace = ['']
@@ -232,6 +231,8 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
         chat_state.original_question = ''
+        with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
+            file.write("")
 
         # 마르코프 추가
         next_rec = None
@@ -239,7 +240,7 @@ def get_hw_response(chat_state: ChatState):
         id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
         if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
             next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
-            
+        
         return {
             'answer': result, 
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
@@ -247,7 +248,6 @@ def get_hw_response(chat_state: ChatState):
             'next_rec': next_rec
         }
 
-        
     elif response_type == "Keyword-based":
         print('\n\n\n\n호출됐음\n\n\n\n')
         # 정확한 주소 검색 후 못찾으면 contains로 검색 
@@ -279,7 +279,7 @@ def get_hw_response(chat_state: ChatState):
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))| recommendation_keyword_prompt_template | llm | StrOutputParser()
         
         # 검색이 안된 경우
         if len(rec) ==0:
@@ -290,7 +290,7 @@ def get_hw_response(chat_state: ChatState):
             rec = pd.DataFrame(row).reset_index()
             
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": original_question, "recommendations": rec.iloc[0].astype(str)})
+        result = chain.invoke({"question": original_question, "recommendations": rec.loc[2, ['name', 'full_location', 'review_summary'], "flag_eng":flag_eng].to_markdown()})
         
         # 추천 후 초기화
         chat_state.info_menuplace = ['']
@@ -298,7 +298,6 @@ def get_hw_response(chat_state: ChatState):
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
         chat_state.original_question = ''
-        
         
         # 마르코프 추가
         next_rec = None

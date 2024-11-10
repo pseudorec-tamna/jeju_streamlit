@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
@@ -5,12 +6,18 @@ app = Flask(__name__)
 # 전역 변수로 위도와 경도 저장
 latitude = None
 longitude = None
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 @app.route('/')
 def index():
+    with open(base_dir+"/data/location.txt", "r", encoding="utf-8") as file:
+        location = file.read()
+
     # 지도 및 검색 UI를 반환하는 HTML
-    return '''
+    search_keyword = location or "장소를 입력해주세요"
+
+    return render_template_string('''
     <!DOCTYPE html>
     <html>
     <head>
@@ -63,7 +70,7 @@ def index():
                 <div class="option">
                     <div>
                         <form onsubmit="searchPlaces(); return false;">
-                            키워드 : <input type="text" value="제주도 서귀포시 맛집" id="keyword" size="15"> 
+                            키워드 : <input type="text" value={{ search_keyword }} id="keyword" size="15"> 
                             <button type="submit">검색하기</button> 
                         </form>
                     </div>
@@ -303,12 +310,12 @@ def index():
         </script>
     </body>
     </html>
-    '''
+    ''', search_keyword=search_keyword)
 
 @app.route('/click', methods=['POST'])
 def handle_click():
     global latitude, longitude
-    data = request.json
+    data = request.get_json()
     latitude = data['latitude']
     longitude = data['longitude']
     return 'OK', 200

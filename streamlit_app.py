@@ -120,7 +120,7 @@ def open_ai_chat(eng_flag=False):
 
     # 질문지 생성 
     with st.container():
-        clicked_sample_query = questions_recommending()
+        clicked_sample_query = questions_recommending(eng_flag)
 
     # 페이지 마지막으로 스크롤 자동화
     scroll_to_bottom()
@@ -128,10 +128,12 @@ def open_ai_chat(eng_flag=False):
     # Chat 입력창 설명 
     if eng_flag:
         temp_prompt = st.chat_input("How can I assist you?")
+        chat_state.flag_eng = "English"
     elif clicked_sample_query:
         temp_prompt = clicked_sample_query
     else:
         temp_prompt = st.chat_input("무엇을 도와드릴까요?")
+        chat_state.flag_eng = "Korean"
 
     if prompt := temp_prompt:
         # Parse the query or get the next scheduled query, if any
@@ -140,6 +142,7 @@ def open_ai_chat(eng_flag=False):
             mode_id = ChatMode.SQL_CHAT_ID
         elif len(chat_state.selected_tags) > 0:
             mode_id = ChatMode.KEYWORD_CHAT_ID
+            st.markdown(chat_state.selected_tags)
         parsed_query = parse_query(prompt, predetermined_chat_mode=mode_id)
         chat_state.update(parsed_query=parsed_query)
 
@@ -453,6 +456,7 @@ def hashtag(eng_flag=False):
                     ss.selected_tags.remove(hashtags_mapping.get(tag, tag))
                 elif len(ss.selected_tags) < 3:
                     ss.selected_tags.append(hashtags_mapping.get(tag, tag))
+                    st.markdown(wrap_info_box(hashtags_mapping.get(tag, tag)), unsafe_allow_html=True)
                     st.rerun()
                 else:
                     st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
@@ -462,13 +466,12 @@ def hashtag(eng_flag=False):
             tmp_rank = [f"{i+1} 순위로 " + j for i, j in enumerate(chat_state.selected_tags)]
             # Append chat history when user_id changes
             chat_state.chat_history.append(
-                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(tmp_rank))
+                ("", "사용자가 원하는 바는 다음과 같아:" + '\n'.join(tmp_rank) + "\n너는 사용자의 원하는 바를 알고있음을 알려줘야해.")
             )
             chat_state.chat_history_all.append(
-                ("", "사용자가 원하는 바는 다음과 같아. 기억하고 있음을 언급해야해. : " + '\n'.join(tmp_rank))
+                ("", "사용자가 원하는 바는 다음과 같아.: " + '\n'.join(tmp_rank)+ "\n너는 사용자의 원하는 바를 알고있음을 알려줘야해.")
             )
 
-        print(chat_state.selected_tags)
 
 # 트렌드를 선택하는 함수
 def trends_buttons():
@@ -645,6 +648,9 @@ def questions_recommending(eng_flag=False):
     parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
     if eng_flag:
         chat_state.flag = "영어로"
+        chat_state.flag_eng = "English"
+    else:
+        chat_state.flag_eng = "Korean"
     chat_state.update(parsed_query=parsed_query)
     question_lists = get_bot_response(chat_state)
 
@@ -719,7 +725,7 @@ def mode_selection():
             **🔍 모드를 선택하여 맞춤형 맛집 추천을 받으세요!**
 
             - **일반 추천 모드**: 다양한 정보를 기반으로 취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.
-            - **집계 모드**: 인기 데이터를 분석하여 지역에서 가장 방문 빈도가 높은 맛집을 추천합니다.
+            - **집계 모드**: 신한카드 데이터를 분석하여 질문에 맞는 맛집을 추천해 드립니다.
             """
         )
         
@@ -738,8 +744,6 @@ def mode_selection():
 
     # 선택된 모드를 표시
     # st.markdown(f"**현재 선택된 모드**: {st.session_state.selected_mode}")
-
-
 
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
@@ -788,7 +792,8 @@ def main():
             st.markdown(GREETING_MESSAGE_ENG)
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
-                # chat_state.flag = "영어로"                 
+                # chat_state.flag = "영어로"      
+                chat_state.flag_eng = "English"                 
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
@@ -820,13 +825,14 @@ def main():
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
                 chat_state.flag = "한국어로"
+                chat_state.flag_eng = "English" 
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
                 
             # 사용자 ID를 포함한 전체 메시지 생성
             full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id and chat_state.user_id.strip() else ss.greeting_message
-
+            
             # 채팅 히스토리에 새 메시지 추가
             if full_message not in (msg for _, msg in chat_state.chat_history):
                 chat_state.chat_history.append(("", full_message))

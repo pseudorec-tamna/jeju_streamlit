@@ -36,6 +36,9 @@ def load_memory(input, chat_state):
     return memory_vars.get("chat_history", [])
 
 def get_sql_chat(chat_state: ChatState):
+    # 한국어 Or 영어
+    flag_eng = chat_state.flag_eng
+
     # Initialize the Gemini 1.5 Flash LLM
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
@@ -57,8 +60,8 @@ def get_sql_chat(chat_state: ChatState):
     print('답변', json_format(response))
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message})
-
+        result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})
+        
         rec = None # 변수 초기화
         return {'answer': result, 'title': '', 'address': ''}
     else:
@@ -68,8 +71,11 @@ def get_sql_chat(chat_state: ChatState):
         output = sql_chain.invoke({"question": chat_state.message}) # sql 출력
         rec = sql_based_recommendation(output, df_quan)             # 문서 검색
 
-        flag = chat_state.flag
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_dict(), "flag":flag})
+        tmp = rec['recommendation'].loc[0, ['name', 'full_location']]
+        tmp.columns = ["가게명", "위치정보"]
+
+        flag_eng = chat_state.flag_eng
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_markdown(), "flag_eng":flag_eng})
 
         print(f"답변 타입: 정량 모델")
         print('여기서의 응답', result)

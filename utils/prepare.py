@@ -27,7 +27,6 @@ GEMINI_API_KEY = "AIzaSyDwwPQj1u0dyNi2Cw5pYQGHL82f4vyxmas"
 # WEATHER KEY
 WEATHER_KEY = os.getenv("WEATHER_SECRET_KEY", "")
 
-# DEFAULT_COLLECTION_NAME = os.getenv("DEFAULT_COLLECTION_NAME", "docdocgo-documentation")
 
 # if USE_CHROMA_VIA_HTTP := bool(os.getenv("USE_CHROMA_VIA_HTTP")):
 #     os.environ["CHROMA_API_IMPL"] = "rest"
@@ -62,3 +61,15 @@ hashtags_mapping = {
 }
 
 is_env_loaded = True
+
+jeju_emojis = """Here are some Jeju-themed emojis you can use in chat:
+🌴🍊 : Tangerines and palm trees, symbols of Jeju
+🌋 : Hallasan Mountain and Jeju’s volcanic landscape
+🏖️ : Beautiful beaches, like Hyeopjae Beach
+🐴 : Jeju horses, unique to the island
+🐬 : Dolphins in Jeju's coastal waters
+🍲 : Jeju’s traditional dish, pork noodles (gogi-guksu)
+🐷 : Black pork, a local specialty
+🍵 : Tea from the O’sulloc green tea fields
+🌞 : Jeju’s bright and sunny weather
+🚗🛣️ : Scenic driving routes around Jeju"""

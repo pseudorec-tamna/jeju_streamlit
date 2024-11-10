@@ -2,7 +2,6 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, get_bu
 from utils.type_utils import PairwiseChatHistory
 
 
-
 def msg_list_chat_history_to_string(
     msg_list: list[BaseMessage],
     human_prefix="Human",

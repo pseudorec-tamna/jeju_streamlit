@@ -52,7 +52,7 @@ def calculate_distance(coord1, coord2):
 def sub_task_detection(question, location, menuplace, keyword, original_question):
     import os 
     load_dotenv()
-
+    
     # genai.configure(api_key="AIzaSyBs54U6aYVwaVVe4KKnPFzc-eQQDMkLIcA")
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=GEMINI_API_KEY,
                                   safety_settings={
