@@ -3,27 +3,10 @@ import pandas as pd
 import google.generativeai as genai
 import os
 
-from langchain_community.utilities import SQLDatabase
-from langchain.chains import create_sql_query_chain
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import chat_prompt_template, recommendation_prompt_template, recommendation_sql_prompt_template, item_search_prompt_template
 
-from recommendation.prompt import sub_task_detection_prompt
-from recommendation.utils import json_format
 # from colorama import Fore, Style
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnablePassthrough
-from langchain.memory import ConversationBufferWindowMemory
-from recommendation.utils import sub_task_detection
-from recommendation.distance_based import distance_based_recommendation, get_coordinates_by_question, coordinates_based_recommendation
-import requests, time
-import subprocess
-from recommendation.sql_based import extract_sql_query, sql_based_recommendation
-from recommendation.prompt import template_sql_prompt
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 import streamlit as st 

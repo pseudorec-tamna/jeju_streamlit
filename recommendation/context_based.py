@@ -13,7 +13,6 @@ from typing import List, Tuple
 
 def make_transition_matrix(hist_df, poi_df, shinhan_df,path_transition_matrix):
 
-   
     # 신한카드 데이터 필터링 후 [신한카드POI * 이력POI] matrix 생성
     shinhan_df = shinhan_df[['id','MCT_NM']]
     shinhan_df = shinhan_df[shinhan_df.id != 'no']

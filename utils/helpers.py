@@ -83,11 +83,8 @@ GREETING_MESSAGE_KOR = """\
 GREETING_MESSAGE_ENG = """\
 **🍊 Hello! I'm Tamna's Flavor AI!** Are you looking for help finding the best restaurants on your trip? I can recommend the perfect spots based on your preferences and needs. I offer **two modes** to provide you with different types of recommendations:
 
-- **General Recommendation Mode**: In this mode, I quickly search through various sources to recommend restaurants that match your preferences and travel route.
-Simply enter the type of food or style you want, and I'll find related restaurants and recommend them to you.
-- **Aggregation Mode**: In this mode, I perform a more in-depth analysis to find the most popular restaurants in the area.
-I analyze various data to show you the places that are most visited and loved in the region.
-This mode is especially useful for those who prefer recommendations based on statistics and aggregated results.
+- **General Recommendation Mode**: Quickly recommends restaurants that match your preferences and travel route based on a variety of information.
+- **Aggregation Mode**: Analyzes Shinhan Card data to recommend restaurants that align with your query.
 
 Whichever mode you choose, I'll help make your trip even more special. Enjoy a delicious culinary journey with Tamna's Flavor AI! 😋
 """

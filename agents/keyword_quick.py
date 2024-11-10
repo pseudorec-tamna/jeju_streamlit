@@ -94,7 +94,9 @@ def load_memory(input, chat_state):
     return memory_vars.get("chat_history", [])
 
 def get_keywords_chat(chat_state: ChatState):
-# Initialize the Gemini 1.5 Flash LLM
+    flag_eng = chat_state.flag_eng
+    
+    # Initialize the Gemini 1.5 Flash LLM
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
         google_api_key=chat_state.google_api_key
@@ -104,7 +106,7 @@ def get_keywords_chat(chat_state: ChatState):
     location = chat_state.info_location
     keyword = chat_state.info_keyword
     business_type = chat_state.info_business_type
-
+    
     # 질의 분류
     response = sub_task_detection(
         chat_state.message, 
@@ -120,7 +122,7 @@ def get_keywords_chat(chat_state: ChatState):
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         print(chain)
-        result = chain.invoke({"question": chat_state.message})
+        result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})
     # elif response_type == "User Preference Elicitation":
     #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm
     #     result = chain.invoke({"question": chat_state.message})
@@ -133,19 +135,19 @@ def get_keywords_chat(chat_state: ChatState):
         location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
         keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
         business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
-        result = chain.invoke({"question": chat_state.message})  
+        result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})  
 
         chat_state.info_menuplace = ['']
         chat_state.info_location = ''
         chat_state.info_keyword = ['']
         chat_state.info_business_type = ['']
-        return {'answer': result}
+        return {'answer': result, 'title':None, 'address':None}
     else:
         menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
         location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
         keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
         business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
-          
+        
         tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
         selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
         
@@ -187,9 +189,9 @@ def get_keywords_chat(chat_state: ChatState):
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
         print('개수', len(rec))
-        print('키워드 추천 문서:', rec.iloc[0].astype(str))
+        print('키워드 추천 문서:', rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown())
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template2 | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec.iloc[0].astype(str), "selected_tags": selected_words})
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown(), "selected_tags": selected_words, "flag_eng":flag_eng})
         
         chat_state.info_menuplace = ['']
         chat_state.info_location = ''

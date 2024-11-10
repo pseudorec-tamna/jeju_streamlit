@@ -16,7 +16,7 @@ from utils.query_parsing import ParsedQuery
 #     PRIVATE_COLLECTION_USER_ID_LENGTH,
 #     get_timestamp,
 # )
-from utils.prepare import get_logger # DEFAULT_COLLECTION_NAME
+from utils.prepare import get_logger
 # from utils.query_parsing import ParsedQuery
 from utils.type_utils import (
     COLLECTION_USERS_METADATA_KEY,
@@ -99,6 +99,8 @@ class ChatState:
         chat_basic_mode: str | None = None,
         flag_trend: str | None = None,
         flag: str | None = None,
+        flag_eng: str | None = None,
+        query_rewrite: str | None = None,
         original_question: str = ''
         # session_data: AgentDataDict | None = None,  # currently not used (agent
         # data is stored in collection metadata)
@@ -132,12 +134,12 @@ class ChatState:
         self.chat_basic_mode = chat_basic_mode
         self.flag_trend = flag_trend
         self.flag = flag
+        self.flag_eng = flag_eng
         self.model = self.embedding_model()
         self.vectorstore = self.chromadb_load()
+        self.query_rewrite = query_rewrite
         self.original_question = original_question
         
-
-
     def chromadb_load(self):
         # chroma_client = chromadb.HttpClient(host='localhost', port=8000) 
         hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=self.model)  
