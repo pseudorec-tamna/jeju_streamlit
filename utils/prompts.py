@@ -844,6 +844,7 @@ PROCEDURE:
 * Refer to the following information that user has given.
 * Think what information is needed to get for better recommendation.
 * Then, generate the answer for getting the info from user.
+* Always end with, "더 많은 정보를 주시면 맞춤 추천을 드릴게요! 지금은 아래 추천을 참고해 보세요. 👇"
 
 LOCATION INFO:
 {location}

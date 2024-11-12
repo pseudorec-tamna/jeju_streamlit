@@ -2,6 +2,7 @@
 import pandas as pd
 import google.generativeai as genai
 import os
+import random
 import streamlit as st
 from langchain_community.utilities import SQLDatabase
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -119,6 +120,123 @@ def load_memory(input, chat_state):
 
     return memory_vars.get("chat_history", [])
 
+def keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng):
+    # 정확한 주소 검색 후 못찾으면 contains로 검색 
+    retrieved = df[df['ADDR_detail'] == location]
+    if len(retrieved) == 0:
+        retrieved = df[df['ADDR_detail'].str.contains(location)]
+    
+    if len(retrieved) == 0:
+        retrieved = df[df['MCT_NM'] == location]
+
+    if len(retrieved) == 0:
+        retrieved = df[df['MCT_NM'].str.contains(location)]
+
+    if len(retrieved) == 0:
+        retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
+    
+    filtered_location = retrieved['ADDR_detail'].unique()
+    menu_keywords = [c for c in chat_state.info_menuplace if c != '']
+
+    # 메뉴 키워드가 하나일 경우 직접 조건을 적용, 여러 개일 경우 $or 조건을 적용
+    df['contains_keyword'] = df.apply(lambda row: any(keyword in row['menus'] or keyword in row['MCT_NM'] for keyword in menu_keywords), axis=1)
+    mct_nm_list = list(df[df["contains_keyword"]]["MCT_NM"].unique())
+    del df['contains_keyword']  # 삭제 후에 다른 코드와 연결
+
+    # "name" 필드에 대한 필터 조건을 미리 준비
+    name_condition = {"name": {"$in": mct_nm_list}} if len(mct_nm_list) > 0 else {}
+
+    if len(name_condition)!=0:
+        # hugging_retriever 설정
+        hugging_retriever = hugging_vectorstore.as_retriever(
+            search_type='similarity',
+            search_kwargs={
+                'k': 100,
+                'filter': {
+                    "$and": [
+                        {"location": {"$in": list(filtered_location)}},
+                        *([name_condition] if name_condition else [])  # name_condition이 있으면 추가
+                    ]
+                }
+            }
+        )
+    else:
+        # hugging_retriever 설정
+        hugging_retriever = hugging_vectorstore.as_retriever(
+            search_type='similarity',
+            search_kwargs={
+                'k': 100,
+                'filter': {
+                    "location": {"$in": list(filtered_location)},
+                }
+            }
+        )
+
+    row = []
+    # 키워드를 넣어 문서 검색
+    if len(keyword) != 0 :
+        docs = hugging_retriever.invoke(
+            ' '.join(keyword)
+        )
+    else:
+        print("Keyword - Query Rewrite:", query_rewrite)
+        docs = hugging_retriever.invoke(
+            ' '.join(query_rewrite)
+        )
+    for doc in docs:
+        row.append(doc.metadata)
+    rec = pd.DataFrame(row).reset_index()
+    # print(rec["location"].values)
+
+    # print(rec[["name", "average_score", "review_counts"]])
+    # print(rec.columns)
+    """ 
+    답변 {'recommendation_factors': {'location': '서귀포시', 'menu_place': ['고기국수'], 'keyword': ['현지인들이 많이 가는'], 'business_type': ['단품요리 전문', '가정식', '분식']}, 'processing': "The user provided '서귀포시' as a location, which means they want to find a '고기국수' restaurant in '서귀포시'. Since the user has narrowed down their search by providing a location, and we have the 'keyword' and 'menu_place' from the previous conversation, this time we will choose 'Keyword-based' recommendation.", 'original_question': '제주도 고기국수 맛집 중에서 현지인들이 많이 가는 곳 추천해줘. 서귀포시', 'response_type': 'Keyword-based'}
+    # 변수 정보 : ['index', 'average_price', 'average_score', 'companion_info', 'feature_info', 'full_location', 'location', 'menu_info', 'name', 'payment_method', 'reservation_info', 'review_counts', 'review_summary', 'revisit_info', 'type', 'waiting_info']
+    # average_score or review_counts를 기준으로 정렬하기 
+    """
+    # Reranking 돌리면 될 듯 
+    # 빈 값이 있는지 확인
+    # 'v_review_cnt', 'b_review_cnt'
+    if rec.shape[0] != 0:
+        print(rec.columns)
+        has_missing_review_counts = (rec["review_counts"] == '') | (rec["review_counts"].isna())
+        has_missing_average_score = (rec["average_score"] == '') | (rec["average_score"].isna())
+
+        # 조건에 따라 정렬 수행
+        if has_missing_review_counts.any() and has_missing_average_score.any():
+            # 두 열 모두 기준으로 내림차순 정렬
+            rec = rec.sort_values(by=["review_counts", "average_score"], ascending=[False, False]).reset_index(drop=True)
+        elif has_missing_review_counts.any():
+            # 'review_counts' 기준으로만 내림차순 정렬
+            rec = rec.sort_values(by=["review_counts"], ascending=[False]).reset_index(drop=True)
+
+    # Reranking 돌리면 될 듯 
+    ## 네이버 평점 통해서 돌리기 + 최소 threshold 
+    chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+    
+    # 검색이 안된 경우 - 1
+    if len(rec) == 0:
+        print("fallback 돌아감? - 1")
+        # fall back
+        if (len(menuplace) == 1) & (menuplace[0]==""):
+            menuplace = random.sample(["고기국수", "갈치조림", "전복죽", "성게덮밥", "우니덮밥", "흑돼지", "설렁탕", "문어해물전골", "제주해물라면", "메밀막국수", "성게보말국", "고등어회", "두루치기", "명태조림", "딱새우", "라면", "보말"], 5)
+        docs = hugging_retriever_baseline.invoke(location + ' '.join(keyword) + ' '.join(menuplace))
+        for doc in docs:
+            row.append(doc.metadata)
+        rec = pd.DataFrame(row).reset_index()
+
+    chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
+    result = chain.invoke({"question": original_question, "recommendations": rec.loc[2, ['name', 'full_location', 'review_summary']].to_markdown(), "flag_eng":flag_eng})
+    
+    # 추천 후 초기화
+    chat_state.info_menuplace = ['']
+    chat_state.info_location = ''
+    chat_state.info_keyword = ['']
+    chat_state.info_business_type = ['']
+    chat_state.original_question = ''
+    return result, rec
+        
 def get_hw_response(chat_state: ChatState):
     # 한국어 Or 영어
     flag_eng = chat_state.flag_eng
@@ -213,7 +331,8 @@ def get_hw_response(chat_state: ChatState):
             }
         )
         # print("chat_state.message", chat_state.message)
-        docs = hugging_retriever_distance.invoke(chat_state.message)
+        print("- Query Rewrite:", query_rewrite)
+        docs = hugging_retriever_distance.invoke(query_rewrite)
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
@@ -221,7 +340,8 @@ def get_hw_response(chat_state: ChatState):
         # 문서가 없는 경우
         if len(rec) == 0:
             # fall back
-            docs = hugging_retriever_baseline.invoke(chat_state.message)
+            print("- Fall Back - Query Rewrite:", query_rewrite)
+            docs = hugging_retriever_baseline.invoke(query_rewrite)
             for doc in docs:
                 row.append(doc.metadata)
             rec = pd.DataFrame(row).reset_index()
@@ -257,101 +377,8 @@ def get_hw_response(chat_state: ChatState):
 
     elif response_type == "Keyword-based":
         print('\n\n\n\n호출됐음\n\n\n\n')
-        # 정확한 주소 검색 후 못찾으면 contains로 검색 
-        retrieved = df[df['ADDR_detail'] == location]
-        if len(retrieved) == 0:
-            retrieved = df[df['ADDR_detail'].str.contains(location)]
-        
-        if len(retrieved) == 0:
-            retrieved = df[df['MCT_NM'] == location]
-
-        if len(retrieved) == 0:
-            retrieved = df[df['MCT_NM'].str.contains(location)]
-
-        if len(retrieved) == 0:
-            retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
-        
-        filtered_location = retrieved['ADDR_detail'].unique()
-        menu_keywords = [c for c in chat_state.info_menuplace if c != '']
-
-        # 메뉴 키워드가 하나일 경우 직접 조건을 적용, 여러 개일 경우 $or 조건을 적용
-        df['contains_keyword'] = df.apply(lambda row: any(keyword in row['menus'] or keyword in row['MCT_NM'] for keyword in menu_keywords), axis=1)
-        mct_nm_list = list(df[df["contains_keyword"]]["MCT_NM"].unique())
-        del df['contains_keyword']  # 삭제 후에 다른 코드와 연결
-
-        # "name" 필드에 대한 필터 조건을 미리 준비
-        name_condition = {"name": {"$in": mct_nm_list}} if len(mct_nm_list) > 0 else {}
-
-        # hugging_retriever 설정
-        hugging_retriever = hugging_vectorstore.as_retriever(
-            search_type='similarity',
-            search_kwargs={
-                'k': 100,
-                'filter': {
-                    "$and": [
-                        {"location": {"$in": list(filtered_location)}},
-                        *([name_condition] if name_condition else [])  # name_condition이 있으면 추가
-                    ]
-                }
-            }
-        )
-
-        row = []
-        # 키워드를 넣어 문서 검색
-        docs = hugging_retriever.invoke(
-            ' '.join(keyword)
-        )
-        for doc in docs:
-            row.append(doc.metadata)
-        rec = pd.DataFrame(row).reset_index()
-        # print(rec["location"].values)
-
-        # print(rec[["name", "average_score", "review_counts"]])
-        # print(rec.columns)
-        """
-        답변 {'recommendation_factors': {'location': '서귀포시', 'menu_place': ['고기국수'], 'keyword': ['현지인들이 많이 가는'], 'business_type': ['단품요리 전문', '가정식', '분식']}, 'processing': "The user provided '서귀포시' as a location, which means they want to find a '고기국수' restaurant in '서귀포시'. Since the user has narrowed down their search by providing a location, and we have the 'keyword' and 'menu_place' from the previous conversation, this time we will choose 'Keyword-based' recommendation.", 'original_question': '제주도 고기국수 맛집 중에서 현지인들이 많이 가는 곳 추천해줘. 서귀포시', 'response_type': 'Keyword-based'}
-        # 변수 정보 : ['index', 'average_price', 'average_score', 'companion_info', 'feature_info', 'full_location', 'location', 'menu_info', 'name', 'payment_method', 'reservation_info', 'review_counts', 'review_summary', 'revisit_info', 'type', 'waiting_info']
-        # average_score or review_counts를 기준으로 정렬하기 
-        """
-        # Reranking 돌리면 될 듯 
-        # 빈 값이 있는지 확인
-        # 'v_review_cnt', 'b_review_cnt'
-        if rec.shape[0] != 0:
-            print(rec.columns)
-            has_missing_review_counts = (rec["review_counts"] == '') | (rec["review_counts"].isna())
-            has_missing_average_score = (rec["average_score"] == '') | (rec["average_score"].isna())
-
-            # 조건에 따라 정렬 수행
-            if has_missing_review_counts.any() and has_missing_average_score.any():
-                # 두 열 모두 기준으로 내림차순 정렬
-                rec = rec.sort_values(by=["review_counts", "average_score"], ascending=[False, False]).reset_index(drop=True)
-            elif has_missing_review_counts.any():
-                # 'review_counts' 기준으로만 내림차순 정렬
-                rec = rec.sort_values(by=["review_counts"], ascending=[False]).reset_index(drop=True)
-
-        # Reranking 돌리면 될 듯 
-        ## 네이버 평점 통해서 돌리기 + 최소 threshold 
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-        
-        # 검색이 안된 경우
-        if len(rec) == 0:
-            print("fallback 돌아감?")
-            # fall back
-            docs = hugging_retriever_baseline.invoke(location + ' '.join(keyword) + ' '.join(menuplace))
-            for doc in docs:
-                row.append(doc.metadata)
-            rec = pd.DataFrame(row).reset_index()
-            
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-        result = chain.invoke({"question": original_question, "recommendations": rec.loc[2, ['name', 'full_location', 'review_summary'], "flag_eng":flag_eng].to_markdown()})
-        
-        # 추천 후 초기화
-        chat_state.info_menuplace = ['']
-        chat_state.info_location = ''
-        chat_state.info_keyword = ['']
-        chat_state.info_business_type = ['']
-        chat_state.original_question = ''
-        
+        result, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
+       
         # 마르코프 추가
         next_rec = None
         id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
@@ -370,9 +397,14 @@ def get_hw_response(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
         print(f"멀티턴 - 추천요소:::: location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
         result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
+        _, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
+
         if result == '': 
             return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
-        return {'answer': result, 'title': '', 'address': '', 'next_rec': ''}
+        return {'answer': result, 
+                'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
+                'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist(),
+                'next_rec': ''}
     else: 
         pass 
         
