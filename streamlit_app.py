@@ -834,7 +834,7 @@ def main():
                 
             # 사용자 ID를 포함한 전체 메시지 생성
             full_message = f"{chat_state.user_id}님 {ss.greeting_message}" if chat_state.user_id and chat_state.user_id.strip() else ss.greeting_message
-            
+
             # 채팅 히스토리에 새 메시지 추가
             if full_message not in (msg for _, msg in chat_state.chat_history):
                 chat_state.chat_history.append(("", full_message))

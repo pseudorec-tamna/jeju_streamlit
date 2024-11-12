@@ -1,30 +1,20 @@
 
 import pandas as pd
-import google.generativeai as genai
-import os
-import streamlit as st
-from langchain_community.utilities import SQLDatabase
-from langchain.chains import create_sql_query_chain
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import recommendation_keyword_prompt_template2, chat_prompt_template
+from utils.prompts import chat_prompt_template
+from agents.hyeonwoo import keyword_based
+from recommendation.context_based import context_based_recommendation
 
 from recommendation.utils import json_format
 # from colorama import Fore, Style
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from recommendation.utils import sub_task_detection
 from utils.client import MysqlClient
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
-import numpy as np
-from langchain_community.vectorstores import Chroma
-from langchain.schema import Document
-
-from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 
 
 # df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
@@ -65,26 +55,6 @@ visit_poi_df = pd.read_csv(path_visit_additional_info)
 
 
 
-# Embedding 모델 불러오기 - 개별 환경에 맞는 device로 설정
-model_name = "upskyy/bge-m3-Korean"
-model_kwargs = {
-    # "device": "cuda"
-    # "device": "mps"
-    "device": "cpu"
-}
-encode_kwargs = {"normalize_embeddings": True}
-hugging_embeddings = HuggingFaceEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs,)
-
-
-hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=hugging_embeddings)        # Load the embeddings
-hugging_retriever = hugging_vectorstore.as_retriever()
-
-
-# print('렛츠고ㅇ', hugging_retriever.invoke('중문'))
-
 def load_memory(input, chat_state):
     # print("chat_state:", chat_state.memory)
     memory_vars = chat_state.memory.load_memory_variables({})
@@ -95,17 +65,16 @@ def load_memory(input, chat_state):
 
 def get_keywords_chat(chat_state: ChatState):
     flag_eng = chat_state.flag_eng
-    
-    # Initialize the Gemini 1.5 Flash LLM
+
     llm = ChatGoogleGenerativeAI(
         model=chat_state.bot_settings.llm_model_name,
-        google_api_key=chat_state.google_api_key
+        google_api_key=chat_state.google_api_key,
     )
+
+    # 벡터DB 로드
+    hugging_vectorstore = chat_state.vectorstore
+    hugging_retriever_baseline = hugging_vectorstore.as_retriever()
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
-    menuplace = chat_state.info_menuplace
-    location = chat_state.info_location
-    keyword = chat_state.info_keyword
-    business_type = chat_state.info_business_type
     
     # 질의 분류
     response = sub_task_detection(
@@ -115,96 +84,60 @@ def get_keywords_chat(chat_state: ChatState):
         chat_state.info_keyword,
         chat_state.original_question
     )
-    
+    if response == '': # 욕설 등으로 인해서 출력이 제대로 완성되지 않은 경우 
+        # 여기에 어떤 내용을 채울지에 대한 고민 
+        return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
+
+    print('여기서부터 분석 시작')
+
+    print('------')
+
+    # 질의 유형 
     response_type = json_format(response)["response_type"]
-    print(f"답변 타입:{response_type}")
+
+    # 질의 요소 
+    recommendation_factors = json_format(response)["recommendation_factors"]
+
+    # 필요 질의문 보관
+    original_question = chat_state.original_question = json_format(response)["original_question"]
+    
+    print(f"답변 타입: {response_type}")
     print('답변', json_format(response))
+    if (recommendation_factors['location'] == '제주' or recommendation_factors['location'] == '제주도') and response_type == "Keyword-based":
+        recommendation_factors['location'] = ''
+        response_type = "Multi-turn"
+    
+    for keyword in ["근처", "가까운"]: 
+        if (chat_state.message.find(keyword) != -1) and (response_type != 'Multi-turn'): 
+            response_type = json_format(response)["response_type"] = "Distance-based"
+    
+    menuplace = chat_state.info_menuplace = recommendation_factors['menu_place'] = list(set(recommendation_factors['menu_place'] + chat_state.info_menuplace))
+    location = chat_state.info_location = recommendation_factors['location'] = recommendation_factors['location'] if (chat_state.info_location == '' or chat_state.info_location == recommendation_factors['location']) else chat_state.info_location + recommendation_factors['location']
+    keyword = chat_state.info_keyword = recommendation_factors['keyword'] = list(set(recommendation_factors['keyword'] + chat_state.info_keyword))
+    business_type = chat_state.info_business_type = recommendation_factors['business_type'] = list(set(recommendation_factors['business_type'] + chat_state.info_business_type))
+    query_rewrite = chat_state.query_rewrite = recommendation_factors["query_rewrite"] 
+    
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
-        print(chain)
         result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})
-    # elif response_type == "User Preference Elicitation":
-    #     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm
-    #     result = chain.invoke({"question": chat_state.message})
-        
-    # elif response_type == "Recommendation" or response_type == "User Preference Elicitation":
         rec = None # 변수 초기화
-        print(f"추천 타입:{json_format(response)['response_type']}")
-        print(f"추천 요소:{json_format(response)['recommendation_factors']}")
-        menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
-        location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
-        keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
-        business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
-        result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})  
+        return {'answer': result, 'title': '', 'address': ''}    
 
-        chat_state.info_menuplace = ['']
-        chat_state.info_location = ''
-        chat_state.info_keyword = ['']
-        chat_state.info_business_type = ['']
-        return {'answer': result, 'title':None, 'address':None}
     else:
-        menuplace = chat_state.info_menuplace = json_format(response)["recommendation_factors"]['menu_place']
-        location = chat_state.info_location = json_format(response)["recommendation_factors"]['location']
-        keyword = chat_state.info_keyword = json_format(response)["recommendation_factors"]['keyword']
-        business_type = chat_state.info_business_type = json_format(response)["recommendation_factors"]['business_type']    
-        
-        tmp_rank = [f"{i+1} 순위로" + j for i, j in enumerate(chat_state.selected_tags)]
-        selected_words = '\n'.join(tmp_rank) if chat_state.selected_tags else "None"
-        
         print('\n\n\n\n호출됐음\n\n\n\n')
-        print(f'selected_words: {selected_words}')
-        print(f'location: {location}\nbusiness_type: {business_type}')
-        # 정확한 주소 검색 후 못찾으면 contains로 검색 
-        retrieved = df[df['ADDR_detail'] == location]
-        if len(retrieved) == 0:
-            retrieved = df[df['ADDR_detail'].str.contains(location)]
-        
-        if len(retrieved) == 0:
-            retrieved = df[df['MCT_NM'] == location]
+        result, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
+       
+        # 마르코프 추가
+        next_rec = None
+        id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
+        if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
+            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
+        if result == '': 
+            return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
 
-        if len(retrieved) == 0:
-            retrieved = df[df['MCT_NM'].str.contains(location)]
-
-        if len(retrieved) == 0:
-            retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
-
-        filtered_location = retrieved['ADDR_detail'].unique()
-        filtered_business_type = business_type
-        print('수집된 location', filtered_location)
-        print('수집된 busyness type', filtered_business_type)
-        hugging_retriever = hugging_vectorstore.as_retriever(
-            search_type='similarity',
-            search_kwargs={
-                'filter': {
-                    "$or": [{"location": "제주"}] + [{"location": loc} for loc in filtered_location]+[{"type":business}for business in filtered_business_type]
-                }
-            }, 
-        )
-        print(hugging_retriever)
-        row = []
-        # print("chat_state.message", chat_state.message)
-        docs = hugging_retriever.invoke(chat_state.message)
-        print('docs', docs)
-        for doc in docs:
-            row.append(doc.metadata)
-        rec = pd.DataFrame(row).reset_index()
-        print('개수', len(rec))
-        print('키워드 추천 문서:', rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown())
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template2 | llm | StrOutputParser()
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown(), "selected_tags": selected_words, "flag_eng":flag_eng})
-        
-        chat_state.info_menuplace = ['']
-        chat_state.info_location = ''
-        chat_state.info_keyword = ['']
-        chat_state.info_business_type = ['']
-        print('이게 문제', rec['name'][:min(3, len(rec['name']))].tolist())
-        print('결과', {
-            'answer': result, 
-            'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
-            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
-        })
         return {
             'answer': result, 
             'title': rec['name'][:min(3, len(rec['name']))].tolist(), 
-            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist()
+            'address': rec['full_location'][:min(3, len(rec['full_location']))].tolist(),
+            'next_rec': next_rec
         }

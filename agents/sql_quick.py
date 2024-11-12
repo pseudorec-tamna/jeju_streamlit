@@ -71,9 +71,6 @@ def get_sql_chat(chat_state: ChatState):
         output = sql_chain.invoke({"question": chat_state.message}) # sql 출력
         rec = sql_based_recommendation(output, df_quan)             # 문서 검색
 
-        tmp = rec['recommendation'].loc[0, ['name', 'full_location']]
-        tmp.columns = ["가게명", "위치정보"]
-
         flag_eng = chat_state.flag_eng
         result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_markdown(), "flag_eng":flag_eng})
 

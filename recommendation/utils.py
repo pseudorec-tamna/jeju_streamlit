@@ -48,7 +48,6 @@ def calculate_distance(coord1, coord2):
     return geodesic(coord1, coord2).km
 
 
-
 def sub_task_detection(question, location, menuplace, keyword, original_question):
     import os 
     load_dotenv()
