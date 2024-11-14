@@ -15,7 +15,6 @@ def load_memory(input, chat_state):
     print(chat_state.chat_history[-1])
     return pairwise_chat_history_to_msg_list([chat_state.chat_history[-1]]) if chat_state.chat_history else []
 
-
 def get_question_chat_chain(
     chat_state: ChatState,
     prompt_qa=CHAT_QUESTION_PROMPT,
