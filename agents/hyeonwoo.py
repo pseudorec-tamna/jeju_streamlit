@@ -323,7 +323,7 @@ def get_hw_response(chat_state: ChatState):
             print(longitude)
             if latitude is not None and longitude is not None:
                 break
-            time.sleep(3)
+            time.sleep(1)
         
         rec = coordinates_based_recommendation((longitude, latitude), df)
         mct_nm_list = rec["MCT_NM"].tolist()
