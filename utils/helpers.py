@@ -81,22 +81,8 @@ GREETING_MESSAGE_KOR = """\
 """
 
 GREETING_MESSAGE_ENG = """\
-**🍊 Hello! I'm Tamna's Flavor AI!** Are you looking for help finding the best restaurants on your trip? I can recommend the perfect spots based on your preferences and needs. I offer **two modes** to provide you with different types of recommendations:
-
-- **General Recommendation Mode**: Quickly recommends restaurants that match your preferences and travel route based on a variety of information.
-- **Aggregation Mode**: Analyzes Shinhan Card data to recommend restaurants that align with your query.
-
-Whichever mode you choose, I'll help make your trip even more special. Enjoy a delicious culinary journey with Tamna's Flavor AI! 😋
+**🍊 Hello! I'm Tamna's Taste AI!** Need help finding the perfect restaurant during your travels? I'm here to recommend the best dining spots tailored to your preferences and needs. I offer **two recommendation modes** to provide a wide range of dining suggestions:
 """
-
-
-# GREETING_MESSAGE = """\
-# 👋**Hi, I'm Tamna:green[Go]!** My superpower is **infinite research** - when you need to go beyond a quick Google search, I will comb through hundreds of websites looking for the information you need. I can:
-
-# - look for sources containing something specific you need (_heatseek_ research mode), or
-# - write a report using all sources and put them in a knowledge base for follow-up chat (_classic_ research)
-
-# """
 
 
 GREETING_MESSAGE_SUFFIX_DEFAULT = "I have lots of cool commands, but the only one to remember is: `/help <any question on using me>`"

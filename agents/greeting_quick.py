@@ -168,9 +168,6 @@ def get_greeting_chat_chain(
     # 현재 제주 날씨 API 
     weather_dict = jeju_weather_dict()
 
-    # Ensure the message is passed; if not, provide a default
-    message = ""
-
     # LLM execution and get the response
     answer = chain.run({
         "date": weather_dict['date'],
@@ -179,7 +176,6 @@ def get_greeting_chat_chain(
         "weather_condition": weather_dict['sky_condition'],
         "flag": flag,
         "chat_history": pairwise_chat_history_to_msg_list([]),
-        "message": message,
     })
 
     return answer

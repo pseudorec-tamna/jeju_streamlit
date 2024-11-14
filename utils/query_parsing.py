@@ -401,32 +401,4 @@ def parse_query(
     else:
         chat_mode, query = extract_chat_mode(query)
 
-    # if chat_mode in {
-    #     ChatMode.CHAT_WITH_DOCS_COMMAND_ID,
-    #     ChatMode.DETAILS_COMMAND_ID,
-    #     ChatMode.QUOTES_COMMAND_ID,
-    # }:
-    #     m, s = extract_search_params(query)
-    #     return ParsedQuery(chat_mode=chat_mode, message=m, search_params=s)
-
-    # if chat_mode == ChatMode.DB_COMMAND_ID:
-    #     c, m = get_command(query, db_command_to_enum, DBCommand.NONE)
-    #     return ParsedQuery(chat_mode=chat_mode, db_command=c, message=m)
-
-    # if chat_mode in {ChatMode.INGEST_COMMAND_ID, ChatMode.SUMMARIZE_COMMAND_ID}:
-    #     c, m = get_command(query, ingest_command_to_enum, IngestCommand.DEFAULT)
-    #     return ParsedQuery(chat_mode=chat_mode, ingest_command=c, message=m)
-
-    # if chat_mode == ChatMode.RESEARCH_COMMAND_ID:
-    #     r, m = parse_research_command(query)
-    #     return ParsedQuery(chat_mode=chat_mode, research_params=r, message=m)
-
-    # if chat_mode == ChatMode.SHARE_COMMAND_ID:
-    #     s = parse_share_command(query)
-    #     return ParsedQuery(chat_mode=chat_mode, share_params=s)
-
-    # if chat_mode == ChatMode.EXPORT_COMMAND_ID:
-    #     e, m = get_command(query, export_command_to_enum, ExportCommand.NONE)
-    #     return ParsedQuery(chat_mode=chat_mode, export_command=e, message=m)
-
     return ParsedQuery(chat_mode=chat_mode, message=query)

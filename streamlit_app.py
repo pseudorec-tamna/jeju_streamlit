@@ -22,9 +22,6 @@ from utils.helpers import (
     VERSION,
     WALKTHROUGH_TEXT,
 )
-from agents.dbmanager import (
-    get_user_facing_collection_name,
-)
 from utils.type_utils import (
     ChatMode
 )
@@ -142,7 +139,6 @@ def open_ai_chat(eng_flag=False):
             mode_id = ChatMode.SQL_CHAT_ID
         elif len(chat_state.selected_tags) > 0:
             mode_id = ChatMode.KEYWORD_CHAT_ID
-            st.markdown(chat_state.selected_tags)
         parsed_query = parse_query(prompt, predetermined_chat_mode=mode_id)
         chat_state.update(parsed_query=parsed_query)
 
@@ -170,9 +166,11 @@ def open_ai_chat(eng_flag=False):
             print(f"현재 사용 봇: {chat_state.chat_mode.value}")
             response = get_bot_response(chat_state)
             answer = response["answer"]
+            answer = answer.replace("```", "").replace("html", "")
+            
             if answer == '': 
                 answer = "주어진 쿼리에 부적절한 내용이 포함되어있습니다. 다시 질문 주시겠어요?" # 여기에 원하는 코멘트를 강제로 삽입해서 출력하는 방법이 있음 
-            
+
             # Check if title and address exists, and display the relevant URL info
             info_box = []
             if response["title"] and response["address"]:
@@ -719,33 +717,61 @@ def mode_selection():
             chat_state.chat_basic_mode = mode  # 선택된 모드에 따라 chat_state 업데이트
             st.rerun()
 
-    # 모드를 선택하는 영역을 생성 ⏺︎ 
-    tmp_mode = "일반 추천 모드" if st.session_state.selected_mode=="general" else "집계 모드"
-    with st.expander(f"**선택된 모드: {tmp_mode}**", expanded=True):
-        st.markdown(
-            """
-            **🔍 모드를 선택하여 맞춤형 맛집 추천을 받으세요!**
+    # Display based on language setting
+    if ss.language == "English":
+        # Determine selected mode and display accordingly
+        tmp_mode = "General Recommendation Mode" if st.session_state.selected_mode == "general" else "Aggregate Mode"
 
-            - **일반 추천 모드**: 다양한 정보를 기반으로 취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.
-            - **집계 모드**: 신한카드 데이터를 분석하여 질문에 맞는 맛집을 추천해 드립니다.
-            """
-        )
-        
-        # 버튼을 가로로 배치 (컬럼 사용)
-        col1, col2 = st.columns([1, 1], gap="medium")
-        with col1:
-            if st.button("일반 추천 모드",
-                         key="general_mode", 
-                         use_container_width=True):
-                select_mode("general")
-        with col2:
-            if st.button("집계 모드", 
-                         key="aggregate_mode", 
-                         use_container_width=True):
-                select_mode("aggregate")
+        with st.expander(f"**⭐ Selected Mode: {tmp_mode}**", expanded=True):
+            st.markdown(
+                """
+                **🔍 Choose a mode to get personalized restaurant recommendations!**
 
-    # 선택된 모드를 표시
-    # st.markdown(f"**현재 선택된 모드**: {st.session_state.selected_mode}")
+                - **General Recommendation Mode**: Quickly recommends restaurants based on various factors like preferences and travel route.
+                - **Aggregate Mode**: Analyzes Shinhan Card data to provide recommendations that match your query.
+                """
+            )
+
+            # Arrange buttons in columns
+            col1, col2 = st.columns([1, 1], gap="medium")
+            with col1:
+                if st.button("General Recommendation Mode", 
+                            key="general_mode", 
+                            use_container_width=True):
+                    select_mode("general")
+            with col2:
+                if st.button("Aggregate Mode", 
+                            key="aggregate_mode", 
+                            use_container_width=True):
+                    select_mode("aggregate")
+
+    else:
+        # Determine selected mode and display accordingly
+        tmp_mode = "일반 추천 모드" if st.session_state.selected_mode=="general" else "집계 모드"
+
+
+        with st.expander(f"**⭐ 선택된 모드: {tmp_mode}**", expanded=True):
+            st.markdown(
+                """
+                **🔍 모드를 선택하여 맞춤형 맛집 추천을 받으세요!**
+
+                - **일반 추천 모드**: 다양한 정보를 기반으로 취향과 여행 경로에 맞는 맛집을 빠르게 추천합니다.
+                - **집계 모드**: 신한카드 데이터를 분석하여 질문에 맞는 맛집을 추천해 드립니다.
+                """
+            )
+
+            # Arrange buttons in columns
+            col1, col2 = st.columns([1, 1], gap="medium")
+            with col1:
+                if st.button("일반 추천 모드", 
+                            key="general_mode", 
+                            use_container_width=True):
+                    select_mode("general")
+            with col2:
+                if st.button("집계 모드", 
+                            key="aggregate_mode", 
+                            use_container_width=True):
+                    select_mode("aggregate")
 
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
@@ -792,9 +818,12 @@ def main():
             side_bar(True)
             # English content here
             st.markdown(GREETING_MESSAGE_ENG)
+            mode_selection()
+            st.markdown("Whichever mode you choose, I'll help make your trip even more special. Enjoy a delicious culinary journey with Tamna's Flavor AI! 😋")
+
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
-                # chat_state.flag = "영어로"      
+                chat_state.flag = "영어로"      
                 chat_state.flag_eng = "English"                 
                 parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
                 chat_state.update(parsed_query=parsed_query)
@@ -819,9 +848,7 @@ def main():
             side_bar(False)
             # Korean content here
             st.markdown(GREETING_MESSAGE_KOR)
-            
             mode_selection()
-
             st.markdown("어떤 모드를 사용하든, 여러분의 여행이 더욱 특별해질 수 있도록 도와드릴게요. 탐라는 맛 AI와 함께 맛있는 미식 여행을 떠나보세요! 😋")
 
             # 날씨, 시간에 따른 인사말 생성 및 저장

@@ -44,11 +44,11 @@ from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 # meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
 mysql = MysqlClient()
 
-query = f"select * from tamdb.basic_info_1"
-mysql.cursor.execute(query)
-rows = mysql.cursor.fetchall()
-columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-df_quan = pd.DataFrame(rows, columns=columns)
+# query = f"select * from tamdb.basic_info_1"
+# mysql.cursor.execute(query)
+# rows = mysql.cursor.fetchall()
+# columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
+# df_quan = pd.DataFrame(rows, columns=columns)
 # df = df.merge(meta_info[["MCT_NM", "ADDR", "MCT_TYPE"]], how="left", on=["MCT_NM","ADDR"])
 
 query = f"select * from tamdb.detailed_info_1"
@@ -190,12 +190,12 @@ def keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseli
 
     # print(rec[["name", "average_score", "review_counts"]])
     # print(rec.columns)
-    """ 
+    """
     답변 {'recommendation_factors': {'location': '서귀포시', 'menu_place': ['고기국수'], 'keyword': ['현지인들이 많이 가는'], 'business_type': ['단품요리 전문', '가정식', '분식']}, 'processing': "The user provided '서귀포시' as a location, which means they want to find a '고기국수' restaurant in '서귀포시'. Since the user has narrowed down their search by providing a location, and we have the 'keyword' and 'menu_place' from the previous conversation, this time we will choose 'Keyword-based' recommendation.", 'original_question': '제주도 고기국수 맛집 중에서 현지인들이 많이 가는 곳 추천해줘. 서귀포시', 'response_type': 'Keyword-based'}
     # 변수 정보 : ['index', 'average_price', 'average_score', 'companion_info', 'feature_info', 'full_location', 'location', 'menu_info', 'name', 'payment_method', 'reservation_info', 'review_counts', 'review_summary', 'revisit_info', 'type', 'waiting_info']
     # average_score or review_counts를 기준으로 정렬하기 
     """
-    # Reranking 돌리면 될 듯 
+    # Reranking 돌리면 될 듯
     # 빈 값이 있는지 확인
     # 'v_review_cnt', 'b_review_cnt'
     if rec.shape[0] != 0:
@@ -251,7 +251,6 @@ def get_hw_response(chat_state: ChatState):
     hugging_retriever_baseline = hugging_vectorstore.as_retriever()
     print(f"chat_state.info_menuplace: {chat_state.info_menuplace}")
     
-    
     # 질의 분류
     response = sub_task_detection(
         chat_state.message, 
@@ -304,7 +303,7 @@ def get_hw_response(chat_state: ChatState):
         with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
             file.write(location)
 
-        st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요.")
+        st.write("<p>어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요.</p>(한 번만 클릭하고 잠시 기다려주세요!)")
         st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
         
         while True: 
@@ -396,7 +395,7 @@ def get_hw_response(chat_state: ChatState):
     elif response_type == "Multi-turn":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
         print(f"멀티턴 - 추천요소:::: location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
-        result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword})
+        result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword, "flag_eng":flag_eng})
         _, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
 
         if result == '': 
