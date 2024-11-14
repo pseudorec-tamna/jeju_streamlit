@@ -226,7 +226,6 @@ recommendation_prompt_template = ChatPromptTemplate.from_messages([
 ])
 
 
-
 recommendation_sql_template_chat2 = '''당신은 탐라는 맛의 탐라 모델입니다. 
 사용자가 당신에게 누군지 물으면 '맛집을 추천해주는 탐라라고 소개하십시오. 
 아래의 주어진 <추천 결과>를 참고해서 질문의 답변을 도와주세요. 

@@ -10,7 +10,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import chat_prompt_template, recommendation_prompt_template, multi_turn_prompt_template, recommendation_keyword_prompt_template
+from utils.prompts import chat_prompt_template, multi_turn_prompt_template, recommendation_keyword_prompt_template
 
 from recommendation.prompt import sub_task_detection_prompt
 from recommendation.utils import json_format

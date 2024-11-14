@@ -8,7 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
-from utils.prompts import recommendation_sql_prompt_template2, chat_prompt_template, recommendation_sql_prompt_template
+from utils.prompts import chat_prompt_template, recommendation_sql_prompt_template
 
 from langchain_core.runnables import RunnablePassthrough
 from recommendation.sql_based import extract_sql_query, sql_based_recommendation
@@ -90,12 +90,12 @@ def get_sql_chat(chat_state: ChatState):
             template_sql_prompt
             )
         sql_chain = sql_prompt | llm 
-        print("SQL QUERY REWRITE :", query_rewrite)
+        print("\nSQL-QUERY REWRITE :", query_rewrite)
         output = sql_chain.invoke({"question": query_rewrite}) # sql 출력
-        print("SQL:", output)
+        print("SQL:", output.content)
         rec = sql_based_recommendation(output, df_quan)             # 문서 검색
 
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[:5].to_markdown(), "flag_eng":flag_eng})
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_markdown(), "flag_eng":flag_eng})
         
         print(f"답변 타입: 정량 모델")
         print('여기서의 응답', result)
