@@ -113,7 +113,7 @@ def get_keywords_chat(chat_state: ChatState):
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})
         rec = None # 변수 초기화
-        return {'answer': result, 'title': '', 'address': ''}    
+        return {'answer': result, 'title': '', 'address': '', 'next_rec':''}    
 
     else:
         print('\n\n\n\n호출됐음\n\n\n\n')
