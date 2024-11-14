@@ -34,7 +34,8 @@ from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
-
+from utils.client import get_vectordb
+vdb = get_vectordb()
 
 # df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
 # df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
@@ -58,7 +59,7 @@ rows = mysql.cursor.fetchall()
 columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
 df = pd.DataFrame(rows, columns=columns)
 df['ADDR_detail'] = df['ADDR'].map(lambda x: ' '.join(x.split(' ')[1:3]))
-# df = df.merge(meta_info[["MCT_NM", "ADDR", "MCT_TYPE"]], how="left", on=["MCT_NM","ADDR"])
+
 
 
 query = f"select * from tamdb.attraction_info"
@@ -76,44 +77,6 @@ visit_poi_df = pd.read_csv(path_visit_additional_info)
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 print("-----------MYSQL End")
 
-# documents = []
-# for row in df.iterrows():
-#   document = Document(
-#       page_content=f"""name:{row[1]['MCT_NM']}, 
-#       review_summary:{row[1]['review']},
-#       full_location:{row[1]['ADDR']}, 
-#       location:{row[1]['ADDR_detail']}, 
-#       average_score:{row[1]['average_score']}, 
-#       average_price:{row[1]['mean_price']},
-#       payment_method:{row[1]['payment']}, 
-#       review_counts: {row[1]['v_review_cnt']},
-#       menu_info:{row[1]['menu_tags']}, 
-#       feature_info:{row[1]['feature_tags']},
-#       revisit_info:{row[1]['revisit']},
-#       reservation_info:{row[1]['reservation']},
-#       companion_info:{row[1]['companion']},
-#       waiting_info:{row[1]['waiting_time']},
-#       type: {row[1]['MCT_TYPE']}
-#       """,
-#       metadata={
-#         "name":row[1]['MCT_NM'], 
-#                 "review_summary":row[1]['review'],
-#                 "full_location":row[1]['ADDR'],
-#                 "location":row[1]['ADDR_detail'], 
-#                 "average_score":row[1]['average_score'], 
-#                 "average_price":row[1]['mean_price'],
-#                 "payment_method":row[1]['payment'], 
-#                 "review_counts": row[1]['v_review_cnt'],
-#                 "menu_info":row[1]['menu_tags'], 
-#                 "feature_info":row[1]['feature_tags'],
-#                 "revisit_info":row[1]['revisit'],
-#                 "reservation_info":row[1]['reservation'],
-#                 "companion_info":row[1]['companion'],
-#                 "waiting_info":row[1]['waiting_time'],
-#                 "type": row[1]['MCT_TYPE']
-#       }
-#   )
-#   documents.append(document)
 
 def load_memory(input, chat_state):
     print("--memory START")

@@ -22,8 +22,10 @@ from utils.type_utils import (
 from langchain_core.documents import Document
 from langchain.memory import ConversationBufferMemory
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+from utils.client import get_vectordb
 logger = get_logger()
-
+vdb_instance = None
+vdb = get_vectordb()
 
 import chromadb
 from langchain_chroma import Chroma
@@ -96,30 +98,30 @@ class ChatState:
         self.flag_trend = flag_trend
         self.flag = flag
         self.flag_eng = flag_eng
-        self.model = self.embedding_model()
-        self.vectorstore = self.chromadb_load()
+        self.model = vdb.embedding
+        self.vectorstore = vdb.hugging_vectorstore
         self.query_rewrite = query_rewrite
         self.original_question = original_question
         
-    def chromadb_load(self):
-        # chroma_client = chromadb.HttpClient(host='localhost', port=8000) 
-        hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=self.model)  
-        return hugging_vectorstore
+    # def chromadb_load(self):
+    #     # chroma_client = chromadb.HttpClient(host='localhost', port=8000) 
+    #     hugging_vectorstore = Chroma(persist_directory="./chroma_db6", embedding_function=self.model)  
+    #     return hugging_vectorstore
 
-    def embedding_model(self, process = 'cpu'):
-        # Embedding 모델 불러오기 - 개별 환경에 맞는 device로 설정
-        model_name = "upskyy/bge-m3-Korean"
-        model_kwargs = {
-            # "device": "cuda"
-            # "device": "mps"
-            "device": process
-        }
-        encode_kwargs = {"normalize_embeddings": True}
-        hugging_embeddings = HuggingFaceEmbeddings(
-            model_name=model_name,
-            model_kwargs=model_kwargs,
-            encode_kwargs=encode_kwargs,)
-        return hugging_embeddings
+    # def embedding_model(self, process = 'cpu'):
+    #     # Embedding 모델 불러오기 - 개별 환경에 맞는 device로 설정
+    #     model_name = "upskyy/bge-m3-Korean"
+    #     model_kwargs = {
+    #         # "device": "cuda"
+    #         # "device": "mps"
+    #         "device": process
+    #     }
+    #     encode_kwargs = {"normalize_embeddings": True}
+    #     hugging_embeddings = HuggingFaceEmbeddings(
+    #         model_name=model_name,
+    #         model_kwargs=model_kwargs,
+    #         encode_kwargs=encode_kwargs,)
+    #     return hugging_embeddings
 
 
     @property
