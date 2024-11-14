@@ -69,7 +69,6 @@ jeju_emojis = """Here are some Jeju-themed emojis you can use in chat:
 🐴 : Jeju horses, unique to the island
 🐬 : Dolphins in Jeju's coastal waters
 🍲 : Jeju’s traditional dish, pork noodles (gogi-guksu)
-🐷 : Black pork, a local specialty
 🍵 : Tea from the O’sulloc green tea fields
 🌞 : Jeju’s bright and sunny weather
 🚗🛣️ : Scenic driving routes around Jeju"""

@@ -51,6 +51,7 @@ mysql = MysqlClient()
 # df_quan = pd.DataFrame(rows, columns=columns)
 # df = df.merge(meta_info[["MCT_NM", "ADDR", "MCT_TYPE"]], how="left", on=["MCT_NM","ADDR"])
 
+print("-----------MYSQL Start")
 query = f"select * from tamdb.detailed_info_1"
 mysql.cursor.execute(query)
 rows = mysql.cursor.fetchall()
@@ -73,6 +74,7 @@ transition_matrix_df = pd.read_csv(path_transition_matrix)
 visit_poi_df = pd.read_csv(path_visit_additional_info)
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print("-----------MYSQL End")
 
 # documents = []
 # for row in df.iterrows():
@@ -114,13 +116,14 @@ base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #   documents.append(document)
 
 def load_memory(input, chat_state):
-
+    print("--memory START")
     memory_vars = chat_state.memory.load_memory_variables({})
     memory_vars["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-
+    print("--memory END")
     return memory_vars.get("chat_history", [])
 
-def keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng):
+def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite):
+    print("--Keyword Based START")
     # 정확한 주소 검색 후 못찾으면 contains로 검색 
     retrieved = df[df['ADDR_detail'] == location]
     if len(retrieved) == 0:
@@ -213,8 +216,7 @@ def keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseli
 
     # Reranking 돌리면 될 듯 
     ## 네이버 평점 통해서 돌리기 + 최소 threshold 
-    chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-    
+
     # 검색이 안된 경우 - 1
     if len(rec) == 0:
         print("fallback 돌아감? - 1")
@@ -226,8 +228,13 @@ def keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseli
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
 
+    print("--Keyword Based END")
+
+    return rec
+
+def keyword_based_llm(chat_state, original_question, rec, llm, flag_eng):
     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
-    result = chain.invoke({"question": original_question, "recommendations": rec.loc[2, ['name', 'full_location', 'review_summary']].to_markdown(), "flag_eng":flag_eng})
+    result = chain.invoke({"question": original_question, "recommendations": rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown(), "flag_eng":flag_eng})
     
     # 추천 후 초기화
     chat_state.info_menuplace = ['']
@@ -235,8 +242,8 @@ def keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseli
     chat_state.info_keyword = ['']
     chat_state.info_business_type = ['']
     chat_state.original_question = ''
-    return result, rec
-        
+    return result
+
 def get_hw_response(chat_state: ChatState):
     # 한국어 Or 영어
     flag_eng = chat_state.flag_eng
@@ -303,7 +310,7 @@ def get_hw_response(chat_state: ChatState):
         with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
             file.write(location)
 
-        st.write("<p>어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요.</p>(한 번만 클릭하고 잠시 기다려주세요!)")
+        st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요. (한 번만 클릭하고 잠시 기다려주세요!)")
         st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
         
         while True: 
@@ -316,7 +323,7 @@ def get_hw_response(chat_state: ChatState):
             print(longitude)
             if latitude is not None and longitude is not None:
                 break
-            time.sleep(5)
+            time.sleep(3)
         
         rec = coordinates_based_recommendation((longitude, latitude), df)
         mct_nm_list = rec["MCT_NM"].tolist()
@@ -332,6 +339,7 @@ def get_hw_response(chat_state: ChatState):
         # print("chat_state.message", chat_state.message)
         print("- Query Rewrite:", query_rewrite)
         docs = hugging_retriever_distance.invoke(query_rewrite)
+        print("--Retreiver")
         for doc in docs:
             row.append(doc.metadata)
         rec = pd.DataFrame(row).reset_index()
@@ -345,8 +353,10 @@ def get_hw_response(chat_state: ChatState):
                 row.append(doc.metadata)
             rec = pd.DataFrame(row).reset_index()
 
+        print("-- chain LLM START")
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state))|  recommendation_keyword_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": original_question, "recommendations": rec.loc[:2, ['name', 'full_location', 'review_summary']].to_markdown(), "flag_eng":flag_eng})
+        print("-- chain LLM END")
 
         # 추천 후 초기화
         chat_state.info_menuplace = ['']
@@ -358,11 +368,13 @@ def get_hw_response(chat_state: ChatState):
             file.write("")
 
         # 마르코프 추가
+        print("--markov START")
         next_rec = None
         # if isinstance(rec, pd.DataFrame):
         id_t = df[df["MCT_NM"]==rec.iloc[0]["name"]].id.values[0] # id 값
         if id_t in transition_matrix_df.index:      # id가 ts매트릭스로 오면 
-            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)   
+            next_rec = context_based_recommendation(id_t, transition_matrix_df, visit_poi_df)  
+        print("--markov END")
 
         if result == '': 
             return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
@@ -376,7 +388,8 @@ def get_hw_response(chat_state: ChatState):
 
     elif response_type == "Keyword-based":
         print('\n\n\n\n호출됐음\n\n\n\n')
-        result, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
+        rec = keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite)
+        result = keyword_based_llm(chat_state, original_question, rec, llm, flag_eng)
        
         # 마르코프 추가
         next_rec = None
@@ -394,9 +407,9 @@ def get_hw_response(chat_state: ChatState):
         }
     elif response_type == "Multi-turn":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | multi_turn_prompt_template | llm | StrOutputParser()
-        print(f"멀티턴 - 추천요소:::: location:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
+        print(f"멀티턴 - 추천요소:::: \nlocation:{location}\nmenu_place:{menuplace}\nkeyword:{keyword}")
         result = chain.invoke({"question": chat_state.message, "menuplace": menuplace, "location": location, "keyword":keyword, "flag_eng":flag_eng})
-        _, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
+        rec = keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite)
 
         if result == '': 
             return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
