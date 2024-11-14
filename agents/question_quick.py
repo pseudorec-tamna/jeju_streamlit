@@ -12,11 +12,9 @@ import re
 
 def load_memory(input, chat_state):
     # print("chat_state:", chat_state.memory)
-    memory_vars = chat_state.memory.load_memory_variables({})
-    memory_vars["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-    # print("chat_history:", memory_vars["chat_history"])
-    # memory_vars.get("chat_history", [])
-    return memory_vars.get("chat_history", [])
+    print(chat_state.chat_history[-1])
+    return pairwise_chat_history_to_msg_list([chat_state.chat_history[-1]]) if chat_state.chat_history else []
+
 
 def get_question_chat_chain(
     chat_state: ChatState,
@@ -29,10 +27,12 @@ def get_question_chat_chain(
         google_api_key=chat_state.google_api_key,
     )
 
+    print("--Question LLM START")
     chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | prompt_qa | llm
     result = chain.invoke({
         "flag":flag
     })
+    print("--Question LLM END")    
 
     # 결과를 파싱하여 리스트로 변환
     content = result.content

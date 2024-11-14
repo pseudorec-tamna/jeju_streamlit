@@ -175,7 +175,6 @@ Here are some Jeju-themed emojis you can use in chat:
 🐴 : Jeju horses, unique to the island
 🐬 : Dolphins in Jeju's coastal waters
 🍲 : Jeju’s traditional dish, pork noodles (gogi-guksu)
-🐷 : Black pork, a local specialty
 🍵 : Tea from the O’sulloc green tea fields
 🌞 : Jeju’s bright and sunny weather
 🚗🛣️ : Scenic driving routes around Jeju
@@ -385,7 +384,6 @@ Here are some Jeju-themed emojis you can use in chat:
 🐴 : Jeju horses, unique to the island
 🐬 : Dolphins in Jeju's coastal waters
 🍲 : Jeju’s traditional dish, pork noodles (gogi-guksu)
-🐷 : Black pork, a local specialty
 🍵 : Tea from the O’sulloc green tea fields
 🌞 : Jeju’s bright and sunny weather
 🚗🛣️ : Scenic driving routes around Jeju
@@ -448,7 +446,6 @@ Here are some Jeju-themed emojis you can use in chat:
 🐴 : Jeju horses, unique to the island
 🐬 : Dolphins in Jeju's coastal waters
 🍲 : Jeju’s traditional dish, pork noodles (gogi-guksu)
-🐷 : Black pork, a local specialty
 🍵 : Tea from the O’sulloc green tea fields
 🌞 : Jeju’s bright and sunny weather
 🚗🛣️ : Scenic driving routes around Jeju
@@ -472,11 +469,10 @@ GOAL:
 * If location information, menu/place information, or keyword information is missing, refer to the previous conversation and generate a response that asks whether the user wants a recommendation based on location, menu/place, or keyword.
 * The response should be similar in tone to the previous dialogue and should be written in {flag_eng}.
 
-PROCEDURE:
-* Refer to the following information that user has given.
-* Think what information is needed to get for better recommendation.
-* Then, generate the answer for getting the info from user.
-* Always end with, "더 많은 정보를 주시면 맞춤 추천을 드릴게요! 지금은 아래 추천을 참고해 보세요. 👇"
+Procedure:
+* Refer to the information provided by the user.
+* If information is missing, generate a response that requests needed information, specifically regarding location, menu/place, or keyword.
+* Always end with, “If you give me more details, I’ll provide a tailored recommendation! For now, please check out the suggestion below. 👇”
 
 LOCATION INFO:
 {location}

@@ -15,7 +15,7 @@ def index():
         location = file.read()
 
     # 지도 및 검색 UI를 반환하는 HTML
-    search_keyword = location or "장소를 입력해주세요"
+    search_keyword = location or "제주"
 
     return render_template_string('''
     <!DOCTYPE html>

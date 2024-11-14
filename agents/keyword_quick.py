@@ -5,7 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from utils.chat_state import ChatState
 from utils.prompts import chat_prompt_template
-from agents.hyeonwoo import keyword_based
+from agents.hyeonwoo import keyword_based, keyword_based_llm
 from recommendation.context_based import context_based_recommendation
 
 from recommendation.utils import json_format
@@ -117,7 +117,8 @@ def get_keywords_chat(chat_state: ChatState):
 
     else:
         print('\n\n\n\n호출됐음\n\n\n\n')
-        result, rec = keyword_based(chat_state, llm, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite, original_question, flag_eng)
+        rec = keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace)
+        result = keyword_based_llm(chat_state, original_question, rec, llm, flag_eng)
        
         # 마르코프 추가
         next_rec = None

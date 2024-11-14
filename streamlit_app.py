@@ -82,7 +82,6 @@ if "chat_state" not in ss:
 
 chat_state: ChatState = ss.chat_state
 
-
 # 스크롤 자동화용 자바스크립트 삽입
 def scroll_to_bottom():
     components.html(
@@ -98,8 +97,7 @@ def scroll_to_bottom():
 def wrap_info_box(info_boxes):
     # 각 요소를 <p></p>로 감싸고 문자열로 반환
     wrapped_boxes = [f"<p>{box}</p>" for box in info_boxes]
-    return "\n".join(wrapped_boxes)  # 리스트를 하나의 문자열로 결합
-
+    return "\n".join(wrapped_boxes)  # 리스트를 하나의 문자열로 결합 
 
 def open_ai_chat(eng_flag=False):
     # 채팅창 생성
@@ -130,13 +128,13 @@ def open_ai_chat(eng_flag=False):
         chat_state.flag_eng = "Korean"
 
     if prompt := temp_prompt:
-        # Parse the query or get the next scheduled query, if any
+        # Parse the query or get the next scheduled query, if any 
         mode_id = ChatMode.CHAT_HW_ID
         if chat_state.chat_basic_mode == "aggregate":
             mode_id = ChatMode.SQL_CHAT_ID
         elif len(chat_state.selected_tags) > 0:
             mode_id = ChatMode.KEYWORD_CHAT_ID
-        parsed_query = parse_query(prompt, predetermined_chat_mode=mode_id)
+        parsed_query = parse_query(prompt, predetermined_chat_mode=mode_id) 
         chat_state.update(parsed_query=parsed_query)
 
         ss.messages.append({"role": "user", "content": prompt})
@@ -153,28 +151,41 @@ def open_ai_chat(eng_flag=False):
 
             # Prepare container and callback handler for showing streaming response
             message_placeholder = st.empty()
-
+            
             cb = CallbackHandlerDDGStreamlit(
                 message_placeholder,
                 end_str=STAND_BY_FOR_INGESTION_MESSAGE
-            )
-            chat_state.callbacks[1] = cb
-            chat_state.add_to_output = lambda x: cb.on_llm_new_token(x, run_id=None)                
-            print(f"현재 사용 봇: {chat_state.chat_mode.value}")
-            response = get_bot_response(chat_state)
+            ) 
+            chat_state.callbacks[1] = cb 
+            chat_state.add_to_output = lambda x: cb.on_llm_new_token(x, run_id=None)                 
+            print(f"현재 사용 봇: {chat_state.chat_mode.value}") 
+            response = get_bot_response(chat_state) 
             answer = response["answer"]
             answer = answer.replace("```", "").replace("html", "").replace("<>", "")
             
             if answer == '': 
                 answer = "주어진 쿼리에 부적절한 내용이 포함되어있습니다. 다시 질문 주시겠어요?" # 여기에 원하는 코멘트를 강제로 삽입해서 출력하는 방법이 있음 
 
+            next_rec = response["next_rec"]
+            if next_rec:
+                next_rec =  f"""
+                <div style="background-color: #f9f2f2; border-radius: 10px; padding: 15px; margin: 10px 0;">
+                    <p style="font-size: 16px; color: #ff7f50; font-weight: bold;">
+                        🎉 여기 들러보셨다면, 다음엔 요기도 꼭 가보세요! 
+                        <span style="color: #ff4500;">{next_rec}</span>
+                    </p>
+                </div>
+                """
+            else:
+                next_rec =""
+            
             # Check if title and address exists, and display the relevant URL info
             info_box = []
             if response["title"] and response["address"]:
                 for res in range(len(response['title'])):
                     info_box.append(url_setting(response["title"][res], response["address"][res], 100))
             
-            # Display the "complete" status - custom or default
+            # Display the "complete" status - custom or default 
             if status:
                 default_status = status_config.get(chat_mode, just_chat_status_config)
                 status.update(
@@ -197,7 +208,7 @@ def open_ai_chat(eng_flag=False):
                 info_box_html = ""
 
         # Assistant 메시지와 info_box를 함께 추가 (HTML 포함)
-        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box_html}"})
+        ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box_html}{next_rec}"})
 
         # 페이지 마지막으로 스크롤 자동화
         scroll_to_bottom()    
@@ -469,7 +480,6 @@ def hashtag(eng_flag=False):
                 ("", "사용자가 원하는 바는 다음과 같아.: " + '\n'.join(tmp_rank)+ "\n너는 사용자의 원하는 바를 알고있음을 알려줘야해.")
             )
 
-
 # 트렌드를 선택하는 함수
 def trends_buttons():
     # 트렌드 선택 드롭다운 메뉴 설정
@@ -675,14 +685,14 @@ def url_setting(title, addr, max_h):
         
     id_url, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count = result
     content = display_store_info(id_url, addr, booking, img, menu_tags, feature_tags, review, revisit, reservation, companion, waiting_time, review_count)
-
+    
     # 이미지가 있을 경우 사진 추가 (클릭 시 새 창에서 원본 보기)
     image_html = ""
     if img and img.strip():
         image_html = f"""
             <div>
                 <a href="{id_url}" target="_blank">
-                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 600px; max-height: {max_h}px; object-fit: cover; border-radius: 10px; margin-bottom: 2px;">
+                    <img src="{img}" alt="Store Image" style="width: 100%; max-width: 700px; max-height: {max_h}px; object-fit: cover; border-radius: 10px; margin-bottom: 2px;">
                 </a>
             </div>
         """
@@ -817,12 +827,12 @@ def main():
             st.markdown(GREETING_MESSAGE_ENG)
             mode_selection()
             st.markdown("Whichever mode you choose, I'll help make your trip even more special. Enjoy a delicious culinary journey with Tamna's Flavor AI! 😋")
-
+            
             # 날씨, 시간에 따른 인사말 생성 및 저장
             if 'greeting_message' not in ss:
-                chat_state.flag = "영어로"      
+                chat_state.flag = "영어로"
                 chat_state.flag_eng = "English"                 
-                parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID)
+                parsed_query = parse_query("", predetermined_chat_mode=ChatMode.JUST_CHAT_GREETING_ID) 
                 chat_state.update(parsed_query=parsed_query)
                 ss.greeting_message = get_bot_response(chat_state)
 
@@ -837,7 +847,7 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat(eng_flag=True)
-    
+            
         else:
             title_header(logo, "")
             st.title("탐라는 맛 AI와 함께하는 미식 여행에 오신 것을 환영합니다!")
