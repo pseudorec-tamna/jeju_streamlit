@@ -662,7 +662,7 @@ def questions_recommending(eng_flag=False):
     question_lists = get_bot_response(chat_state)
 
     # Show sample queries
-    for _ in range(5):
+    for _ in range(3):
         st.write("")
 
     def click_button(query):
