@@ -1,7 +1,6 @@
 import os
 from typing import Any
 
-from langchain.chains import LLMChain
 from utils.prepare import DEFAULT_OPENAI_API_KEY, WEATHER_KEY, get_logger
 from utils.chat_state import ChatState
 from utils.type_utils import OperationMode
