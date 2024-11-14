@@ -54,26 +54,49 @@ def get_sql_chat(chat_state: ChatState):
         chat_state.info_keyword,
         chat_state.original_question
     )
+    if response == '': # 욕설 등으로 인해서 출력이 제대로 완성되지 않은 경우 
+        # 여기에 어떤 내용을 채울지에 대한 고민 
+        return {'answer': '', 'title': '', 'address': '', 'next_rec': ''}
 
+    # 질의 유형 
     response_type = json_format(response)["response_type"]
-    print(f"답변 타입:{response_type}")
+
+    # 질의 요소 
+    recommendation_factors = json_format(response)["recommendation_factors"]
+
+    # 필요 질의문 보관
+    original_question = chat_state.original_question = json_format(response)["original_question"]
+    
+    print(f"답변 타입: {response_type}")
     print('답변', json_format(response))
+    if (recommendation_factors['location'] == '제주' or recommendation_factors['location'] == '제주도') and response_type == "Keyword-based":
+        recommendation_factors['location'] = ''
+        response_type = "Multi-turn"
+    
+    menuplace = chat_state.info_menuplace = recommendation_factors['menu_place'] = list(set(recommendation_factors['menu_place'] + chat_state.info_menuplace))
+    location = chat_state.info_location = recommendation_factors['location'] = recommendation_factors['location'] if (chat_state.info_location == '' or chat_state.info_location == recommendation_factors['location']) else chat_state.info_location + recommendation_factors['location']
+    keyword = chat_state.info_keyword = recommendation_factors['keyword'] = list(set(recommendation_factors['keyword'] + chat_state.info_keyword))
+    business_type = chat_state.info_business_type = recommendation_factors['business_type'] = list(set(recommendation_factors['business_type'] + chat_state.info_business_type))
+    query_rewrite = chat_state.query_rewrite = recommendation_factors["query_rewrite"] 
+    
     if response_type == "Chat":
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | chat_prompt_template | llm | StrOutputParser()
         result = chain.invoke({"question": chat_state.message, "flag_eng":flag_eng})
-        
         rec = None # 변수 초기화
         return {'answer': result, 'title': '', 'address': ''}
     else:
         chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
-        sql_prompt = ChatPromptTemplate.from_template(template_sql_prompt)
+        sql_prompt = ChatPromptTemplate.from_template(
+            template_sql_prompt
+            )
         sql_chain = sql_prompt | llm 
-        output = sql_chain.invoke({"question": chat_state.message}) # sql 출력
+        print("SQL QUERY REWRITE :", query_rewrite)
+        output = sql_chain.invoke({"question": query_rewrite}) # sql 출력
+        print("SQL:", output)
         rec = sql_based_recommendation(output, df_quan)             # 문서 검색
 
-        flag_eng = chat_state.flag_eng
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_markdown(), "flag_eng":flag_eng})
-
+        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[:5].to_markdown(), "flag_eng":flag_eng})
+        
         print(f"답변 타입: 정량 모델")
         print('여기서의 응답', result)
         response = response = {

@@ -4,20 +4,7 @@ from typing import Callable, Any
 # from chromadb import Collection
 from pydantic import BaseModel, Field
 from utils.query_parsing import ParsedQuery
-# from agents.researcher_data import ResearchReportData
-# from components.chroma_ddg import (
-#     ChromaDDG,
-#     CollectionDoesNotExist,
-#     get_vectorstore_using_openai_api_key,
-# )
-# from components.llm import get_prompt_llm_chain
-# from utils.helpers import (
-#     PRIVATE_COLLECTION_PREFIX,
-#     PRIVATE_COLLECTION_USER_ID_LENGTH,
-#     get_timestamp,
-# )
 from utils.prepare import get_logger
-# from utils.query_parsing import ParsedQuery
 from utils.type_utils import (
     COLLECTION_USERS_METADATA_KEY,
     AccessCodeSettings,
@@ -38,32 +25,6 @@ from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 logger = get_logger()
 
 
-# class ScheduledQueries(BaseModel):
-#     queue_: list[ParsedQuery] = Field(default_factory=list)
-
-#     def add_to_front(self, query: ParsedQuery) -> None:
-#         """Add a query to the top of the queue. This query will be executed next."""
-#         self.queue_.append(query)
-
-#     def add_to_back(self, query: ParsedQuery) -> None:
-#         """Add a query to the bottom of the queue. This query will be executed last."""
-#         self.queue_.insert(0, query)
-
-#     def pop(self) -> ParsedQuery | None:
-#         """Pop the next query from the queue. Returns None if the queue is empty."""
-#         try:
-#             return self.queue_.pop()
-#         except IndexError:
-#             return None
-
-#     def __len__(self) -> int:
-#         return len(self.queue_)
-
-#     def __bool__(self) -> bool:
-#         return bool(self.queue_)
-# from langchain_community.vectorstores import Chroma
-
-# AgentDataDict = dict[str, JSONishDict]  # e.g. {"hs_data": {"links": [...], "blah": 3}}
 import chromadb
 from langchain_chroma import Chroma
 
