@@ -27,18 +27,6 @@ GEMINI_API_KEY = "AIzaSyDwwPQj1u0dyNi2Cw5pYQGHL82f4vyxmas"
 # WEATHER KEY
 WEATHER_KEY = os.getenv("WEATHER_SECRET_KEY", "")
 
-
-# if USE_CHROMA_VIA_HTTP := bool(os.getenv("USE_CHROMA_VIA_HTTP")):
-#     os.environ["CHROMA_API_IMPL"] = "rest"
-
-# # The following three variables are only used if USE_CHROMA_VIA_HTTP is True
-# CHROMA_SERVER_HOST = os.getenv("CHROMA_SERVER_HOST", "localhost")
-# CHROMA_SERVER_HTTP_PORT = os.getenv("CHROMA_SERVER_HTTP_PORT", "8000")
-# CHROMA_SERVER_AUTHN_CREDENTIALS = os.getenv("CHROMA_SERVER_AUTHN_CREDENTIALS", "")
-
-# # The following variable is only used if USE_CHROMA_VIA_HTTP is False
-# VECTORDB_DIR = os.getenv("VECTORDB_DIR", "chroma/")
-
 MODEL_NAME = "gemini-1.5-flash"  # rename to DEFAULT_MODEL?
 TEMPERATURE = float(os.getenv("TEMPERATURE", 0.1))
 
