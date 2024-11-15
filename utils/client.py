@@ -2,7 +2,7 @@ import pymysql
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-# from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import boto3
 from langchain.vectorstores import FAISS
@@ -32,22 +32,25 @@ class MysqlClient:
 
 class vectordb:
     def __init__(self):
-        self.c_bucket_name = "tamnadb-faiss"
-        self.c_folder_path = "faiss_full_db"
-        self.c_local_path = "/tmp/faiss_full_db"
+        # self.c_bucket_name = "tamnadb-faiss"
+        # self.c_folder_path = "faiss_full_db"
+        # self.c_local_path = "/tmp/faiss_full_db"
+        self.c_bucket_name = "tamnadb-chroma"
+        self.c_folder_path = "chroma_db"
+        self.c_local_path = "/tmp/chroma_db"
         self.s3 = boto3.client('s3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         region_name=os.getenv('AWS_REGION'))
         self.download_s3_folder(self.c_bucket_name, self.c_folder_path, self.c_local_path)
         self.embedding = self.embedding_model()
-        
-        self.hugging_vectorstore = FAISS.load_local(
-            folder_path=self.c_local_path,
-            index_name="faiss_index",
-            embeddings=self.embedding,
-            allow_dangerous_deserialization=True,
-        )
+        self.hugging_vectorstore = Chroma(persist_directory=self.c_local_path , embedding_function=self.embedding)
+        # self.hugging_vectorstore = FAISS.load_local(
+        #     folder_path=self.c_local_path,
+        #     index_name="faiss_index",
+        #     embeddings=self.embedding,
+        #     allow_dangerous_deserialization=True,
+        # )
     def download_s3_folder(self, bucket_name, folder_path, local_path):
         print('vectorDB 다운로드중')
         os.makedirs(local_path, exist_ok=True)
@@ -81,9 +84,3 @@ def get_vectordb():
     if vdb_instance is None:
         vdb_instance = vectordb()  # 인스턴스를 한 번만 생성
     return vdb_instance
-
-# def get_mysql():
-#     global mysql_instance
-#     if mysql_instance is None:
-#         mysql_instance = MysqlClient()  # 인스턴스를 한 번만 생성
-#     return mysql_instance

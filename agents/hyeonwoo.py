@@ -102,16 +102,21 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
         retrieved = df_refer[df_refer['MCT_NM'].str.contains(location)]
     
     filtered_location = retrieved['ADDR_detail'].unique()
+    print(f'------------filtered_location: {filtered_location, type(filtered_location)}')
     menu_keywords = [c for c in chat_state.info_menuplace if c != '']
-
+    print(f'------------menu keywords: {menu_keywords}')
     # 메뉴 키워드가 하나일 경우 직접 조건을 적용, 여러 개일 경우 $or 조건을 적용
     df['contains_keyword'] = df.apply(lambda row: any(keyword in row['menus'] or keyword in row['MCT_NM'] for keyword in menu_keywords), axis=1)
+    
+    
     mct_nm_list = list(df[df["contains_keyword"]]["MCT_NM"].unique())
     del df['contains_keyword']  # 삭제 후에 다른 코드와 연결
 
+    print(f'------------mct_nm_list: {mct_nm_list}')
+
     # "name" 필드에 대한 필터 조건을 미리 준비
     name_condition = {"name": {"$in": mct_nm_list}} if len(mct_nm_list) > 0 else {}
-
+    print(f'------------name condition: {name_condition}')
     if len(name_condition)!=0:
         # hugging_retriever 설정
         hugging_retriever = hugging_vectorstore.as_retriever(
@@ -126,6 +131,7 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
                 }
             }
         )
+
     else:
         # hugging_retriever 설정
         hugging_retriever = hugging_vectorstore.as_retriever(
@@ -141,14 +147,18 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
     row = []
     # 키워드를 넣어 문서 검색
     if len(keyword) != 0 :
+        print('키워드 있음', keyword)
         docs = hugging_retriever.invoke(
             ' '.join(keyword)
         )
     else:
+        print('키워드 앖음')
         print("Keyword - Query Rewrite:", query_rewrite)
         docs = hugging_retriever.invoke(
             ' '.join(query_rewrite)
         )
+
+    
     for doc in docs:
         row.append(doc.metadata)
     rec = pd.DataFrame(row).reset_index()
@@ -164,6 +174,9 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
     # Reranking 돌리면 될 듯
     # 빈 값이 있는지 확인
     # 'v_review_cnt', 'b_review_cnt'
+
+    print(f"\n\n\n\n결과값 조회: {rec}\n\n\n\n")
+
     if rec.shape[0] != 0:
         print(rec.columns)
         has_missing_review_counts = (rec["review_counts"] == '') | (rec["review_counts"].isna())
