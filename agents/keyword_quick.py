@@ -117,7 +117,7 @@ def get_keywords_chat(chat_state: ChatState):
 
     else:
         print('\n\n\n\n호출됐음\n\n\n\n')
-        rec = keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace)
+        rec = keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, location, keyword, menuplace, query_rewrite)
         result = keyword_based_llm(chat_state, original_question, rec, llm, flag_eng)
        
         # 마르코프 추가
