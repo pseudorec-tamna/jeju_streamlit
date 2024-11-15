@@ -274,6 +274,7 @@ HTML Examples:
 * Combination of Color and Bold without Font Size Change: <span style="color: orange; font-weight: bold;">Bold, Orange Text</span>
 
 <추천 결과>:
+{tmp}
 {recommendations}
 
 <table schema> what you must refer to 

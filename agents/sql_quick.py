@@ -96,7 +96,7 @@ def get_sql_chat(chat_state: ChatState):
             print("SQL:", output.content)
             rec = sql_based_recommendation(output, df_quan)             # 문서 검색
             print(rec['recommendation'].iloc[:3].to_markdown())
-            result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[:3].to_markdown(), "flag_eng":flag_eng})
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[:3].to_markdown(), "flag_eng":flag_eng, "tmp":rec['tmp']})
 
             # 추천 후 초기화
             chat_state.info_menuplace = ['']

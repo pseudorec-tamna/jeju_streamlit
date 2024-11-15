@@ -88,18 +88,13 @@ chat_state: ChatState = ss.chat_state
 # Define the port and start the Flask server as a subprocess
 FLASK_PORT = 5000
 
-def start_flask():
-    """Start the Flask server as a subprocess."""
-    # Check if Flask server is already running
-    try:
-        requests.get(f"http://127.0.0.1:{FLASK_PORT}")
-        st.warning("Flask server is already running.")
-    except requests.exceptions.ConnectionError:
-        # Run the Flask app in the background
-        subprocess.Popen(["python", "app.py"], env=os.environ)
-        st.info("Starting Flask server...")
-        time.sleep(1)  # Wait for the server to start
+# Flask 백그라운드 서버 실행
+def run_flask():
+    subprocess.Popen(["python", "app.py"])
 
+# 백그라운드로 Flask 서버 시작
+run_flask()
+time.sleep(1)  # 서버가 시작될 때까지 잠시 대기
 
 # 스크롤 자동화용 자바스크립트 삽입
 def scroll_to_bottom():
@@ -800,9 +795,6 @@ def mode_selection():
                     select_mode("aggregate")
 
 def main():
-    # Start Flask server
-    start_flask()
-    
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
 
