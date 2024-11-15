@@ -55,6 +55,7 @@ def extract_sql_query(result):
 def sql_based_recommendation(result, df):
     
     result_df = extract_sql_query(result.content)
+    tmp = ""
     
     # SQL 결과가 안나오면 비어있을 수 있음 
     if result_df.shape[0] >= 1:
@@ -64,8 +65,10 @@ def sql_based_recommendation(result, df):
         if result_df.shape[0] >= 1:
             rec = df[df["MCT_NM"].isin(list(result_df["MCT_NM"].unique()))].reset_index(drop=True)
         else:    
-            rec = df
+            rec = df[df.UE_CNT_GRP == "1_상위 10% 이하"].sample(20)
+            tmp = "* 아래 결과는 예시일 뿐 실제 데이터는 검색되지 않았습니다. 해당 질문에 맞는 데이터가 존재하지 않습니다."
     print('여어이기', len(rec))
     return {
         "recommendation": rec,
+        "tmp":tmp
     }

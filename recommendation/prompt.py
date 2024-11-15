@@ -240,11 +240,11 @@ TABLE SCHEMA:
 | YM | Reference Month | STRING | 202301~202312 | 202301, 202302, 202303, 202304, 202305, 202306, 202307, 202308, 202309, 202310, 202311, 202312 |
 | MCT_NM | Merchant Name | STRING | | |
 | OP_YMD | Opening Date | STRING | Date the merchant opened | |
-| MCT_TYPE | Business Type | STRING | 30 categories of dining-related types | e.g., Family-style, Specialty, Coffee, Bakery, Japanese, Chicken, Chinese, Snack, Hamburger, etc. |
+| MCT_TYPE | Business Type | STRING | 30 categories of dining-related types | 가정식, 단품요리 전문, 커피, 베이커리, 일식, 치킨, 중식, 분식, 햄버거, 양식, 맥주/요리주점, 아이스크림/빙수, 피자, 샌드위치/토스트, 차, 꼬치구이, 기타세계요리, 구내식당/푸드코트, 떡/한과, 도시락, 도너츠, 주스, 동남아/인도음식, 패밀리 레스토랑, 기사식당, 야식, 스테이크, 포장마차, 부페, 민속주점 |
 | ADDR | Address | STRING | Merchant's address | |
-| UE_CNT_GRP | Usage Count Group | STRING | Grouped into 6 levels based on usage volume by month and industry | e.g., 1_Top 10%, 2_10~25%, 3_25~50%, etc. |
-| UE_AMT_GRP | Usage Amount Group | STRING | Grouped into 6 levels based on usage amount by month and industry | e.g., 1_Top 10%, 2_10~25%, 3_25~50%, etc. |
-| UE_AMT_PER_TRSN_GRP | Average Transaction Amount Group | STRING | Grouped into 6 levels based on average transaction amount by month and industry | e.g., 1_Top 10%, 2_10~25%, 3_25~50%, etc. |
+| UE_CNT_GRP | Usage Count Group | STRING | Grouped into 6 levels based on usage volume by month and industry | 1_상위 10% 이하, 2_10~25%, 3_25~50%, 4_50~75%, 5_75~90%, 6_90% 초과(하위 10% 이하) |
+| UE_AMT_GRP | Usage Amount Group | STRING | Grouped into 6 levels based on usage amount by month and industry | 1_상위 10% 이하, 2_10~25%, 3_25~50%, 4_50~75%, 5_75~90%, 6_90% 초과(하위 10% 이하) |
+| UE_AMT_PER_TRSN_GRP | Average Transaction Amount Group | STRING | Grouped into 6 levels based on average transaction amount by month and industry | 1_상위 10% 이하, 2_10~25%, 3_25~50%, 4_50~75%, 5_75~90%, 6_90% 초과(하위 10% 이하) |
 | MON_UE_CNT_RAT | Monday Usage Count Ratio | FLOAT | | |
 | TUE_UE_CNT_RAT | Tuesday Usage Count Ratio | FLOAT | | |
 | WED_UE_CNT_RAT | Wednesday Usage Count Ratio | FLOAT | | |
