@@ -6,7 +6,6 @@ from utils.prepare import (
     get_logger,
     hashtags_mapping
 )
-from streamlit_modal import Modal
 from utils.query_parsing import parse_query
 from components.llm import CallbackHandlerDDGStreamlit
 from agents.final_pretty import df_filter, display_store_info
@@ -34,7 +33,6 @@ from utils.streamlit.helpers import (
     show_uploader,
     just_chat_status_config,
 )
-from streamlit_modal import Modal
 import streamlit.components.v1 as components
 from tamla import get_bot_response
 from components.sql_trend import trend_df
