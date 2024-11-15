@@ -81,7 +81,7 @@ def index():
             </div>
         </div>
         <p id="result"></p>
-        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=28e4d4739fe65a650ce5cb32cf39e00e&libraries=services"></script>
+        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=630c6b708b875156ab7fcaf34b88ec1e&libraries=services"></script>
         <script>
             var markers = [];
             var mapContainer = document.getElementById('map');
