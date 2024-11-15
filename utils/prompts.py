@@ -102,6 +102,7 @@ CHAT_GREETING_PROMPT = ChatPromptTemplate.from_messages(
 chat_question_template = """
 Here are some questions you can ask the Jeju restaurant chatbot.
 Please generate 2 possible questions related to Jeju restaurants based on the previous conversation.
+질문 하나는 Attribute-based recommendations, 다른 하나는 Attribute-based recommendation 형 질문을 하세요.
 질문은 최대한 짧고 간단하게 {flag} 작성하세요. 
 
 Ensure to generate exactly 2 questions in the following format:
@@ -111,8 +112,8 @@ Ensure to generate exactly 2 questions in the following format:
 ]
 
 Each question should be of a different type:
-- Proximity-based recommendations: Recommends restaurants closest to the user’s current location or desired place. The keywords "근처" or "가까이" should be included in the question to trigger proximity-based recommendations.
 - Attribute-based recommendations: Matches the desired restaurant characteristics such as taste, price, wait time, satisfaction, menu, delivery, ambiance, service, location, food portion, view, parking, cleanliness, family-friendly, couple-friendly, etc.
+- Proximity-based recommendations: Recommends restaurants closest to the user’s current location or desired place. The keywords "근처" or "가까이" should be included in the question to trigger proximity-based recommendations.
 
 Question examples:
 - Attribute-based recommendations:

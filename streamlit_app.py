@@ -476,7 +476,7 @@ def hashtag(eng_flag=False):
                     ss.selected_tags.remove(hashtags_mapping.get(tag, tag))
                 elif len(ss.selected_tags) < 3:
                     ss.selected_tags.append(hashtags_mapping.get(tag, tag))
-                    st.markdown(wrap_info_box(hashtags_mapping.get(tag, tag)), unsafe_allow_html=True)
+                    # st.markdown(wrap_info_box(hashtags_mapping.get(tag, tag)), unsafe_allow_html=True)
                     st.rerun()
                 else:
                     st.warning("최대 3개까지만 선택할 수 있습니다." if not eng_flag else "You can select up to 3 tags.")
@@ -763,8 +763,6 @@ def mode_selection():
                             key="aggregate_mode", 
                             use_container_width=True):
                     select_mode("aggregate")
-                    chat_state.chat_history.append(("", "The Most Popular Restaurants Among People in Their 20s"))
-                    chat_state.chat_history_all.append(("", "The Most Popular Restaurants Among People in Their 20s"))
 
     else:
         # Determine selected mode and display accordingly
