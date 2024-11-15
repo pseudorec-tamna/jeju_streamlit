@@ -3,7 +3,6 @@ from datetime import datetime
 from utils.chat_state import ChatState
 from utils.prompts import CHAT_QUESTION_PROMPT
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains import LLMChain
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 from langchain_core.runnables import RunnablePassthrough
 import json 
@@ -12,7 +11,7 @@ import re
 
 def load_memory(input, chat_state):
     # print("chat_state:", chat_state.memory)
-    print("chat_history : ", chat_state.chat_history[-1])
+    # print("chat_history : ", chat_state.chat_history[-1])
     return pairwise_chat_history_to_msg_list([chat_state.chat_history[-1]]) if chat_state.chat_history else []
 
 def get_question_chat_chain(
