@@ -763,6 +763,8 @@ def mode_selection():
                             key="aggregate_mode", 
                             use_container_width=True):
                     select_mode("aggregate")
+                    chat_state.chat_history.append(("", "The Most Popular Restaurants Among People in Their 20s"))
+                    chat_state.chat_history_all.append(("", "The Most Popular Restaurants Among People in Their 20s"))
 
     else:
         # Determine selected mode and display accordingly
@@ -791,6 +793,8 @@ def mode_selection():
                             key="aggregate_mode", 
                             use_container_width=True):
                     select_mode("aggregate")
+                    chat_state.chat_history.append(("", "20대가 가장 많이 이용하는 맛집"))
+                    chat_state.chat_history_all.append(("", "20대가 가장 많이 이용하는 맛집"))
 
 def main():
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
