@@ -52,19 +52,17 @@ def extract_sql_query(result):
     result = pd.read_sql(select_content, con=mysql_uri)
     return result
 
-
-
 def sql_based_recommendation(result, df):
     
     result_df = extract_sql_query(result.content)
     
     # SQL 결과가 안나오면 비어있을 수 있음 
     if result_df.shape[0] >= 1:
-        rec = df[df["MCT_NM"] == result_df["MCT_NM"].values[0]].reset_index(drop=True)
+        rec = df[df["MCT_NM"].isin(list(result_df["MCT_NM"].unique()))].reset_index(drop=True)
     else:
         result_df = extract_sql_query(add_percent_around_region(result.content, regions))
         if result_df.shape[0] >= 1:
-            rec = df[df["MCT_NM"] == result_df["MCT_NM"].values[0]].reset_index(drop=True)
+            rec = df[df["MCT_NM"].isin(list(result_df["MCT_NM"].unique()))].reset_index(drop=True)
         else:    
             rec = df
     print('여어이기', len(rec))

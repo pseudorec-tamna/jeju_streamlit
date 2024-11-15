@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import requests
 import json  
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains import LLMChain
+from langchain_core.runnables import RunnablePassthrough
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 import time
 
@@ -163,13 +163,17 @@ def get_greeting_chat_chain(
         google_api_key=chat_state.google_api_key,
     )
 
-    chain = LLMChain(llm=llm, prompt=prompt_qa)
+    chain = (
+        RunnablePassthrough()  # 입력을 그대로 전달
+        | prompt_qa      # 프롬프트 템플릿에 전달
+        | llm                  # LLM에 전달
+        )
 
     # 현재 제주 날씨 API 
     weather_dict = jeju_weather_dict()
-
+    
     # LLM execution and get the response
-    answer = chain.run({
+    answer = chain.invoke({
         "date": weather_dict['date'],
         "time": weather_dict['time'],
         "temperature": float(weather_dict['temperature'][:-1]) if weather_dict['temperature'] else "모름",
@@ -178,5 +182,5 @@ def get_greeting_chat_chain(
         "chat_history": pairwise_chat_history_to_msg_list([]),
     })
 
-    return answer
+    return answer.content
 

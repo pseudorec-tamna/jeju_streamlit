@@ -85,26 +85,48 @@ def get_sql_chat(chat_state: ChatState):
         rec = None # 변수 초기화
         return {'answer': result, 'title': '', 'address': '', 'next_rec':''}
     else:
-        chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
-        sql_prompt = ChatPromptTemplate.from_template(
-            template_sql_prompt
-            )
-        sql_chain = sql_prompt | llm 
-        print("\nSQL-QUERY REWRITE :", query_rewrite)
-        output = sql_chain.invoke({"question": query_rewrite}) # sql 출력
-        print("SQL:", output.content)
-        rec = sql_based_recommendation(output, df_quan)             # 문서 검색
+        try:
+            chain = RunnablePassthrough.assign(chat_history=lambda input: load_memory(input, chat_state)) | recommendation_sql_prompt_template | llm | StrOutputParser()
+            sql_prompt = ChatPromptTemplate.from_template(
+                template_sql_prompt
+                )
+            sql_chain = sql_prompt | llm 
+            print("\nSQL-QUERY REWRITE :", query_rewrite)
+            output = sql_chain.invoke({"question": query_rewrite}) # sql 출력
+            print("SQL:", output.content)
+            rec = sql_based_recommendation(output, df_quan)             # 문서 검색
+            print(rec['recommendation'].iloc[:3].to_markdown())
+            result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[:3].to_markdown(), "flag_eng":flag_eng})
 
-        result = chain.invoke({"question": chat_state.message, "recommendations": rec['recommendation'].iloc[0].to_markdown(), "flag_eng":flag_eng})
-        
-        print(f"답변 타입: 정량 모델")
-        print('여기서의 응답', result)
-        response = response = {
-                "answer": result, 
-                'title': rec['recommendation']['MCT_NM'].iloc[:min(3, len(rec['recommendation']))].tolist(), 
-                'address': rec['recommendation']['ADDR'].iloc[:min(3, len(rec['recommendation']))].tolist(),
-                'next_rec': ''
-            }
-        print('응답', response)
+            # 추천 후 초기화
+            chat_state.info_menuplace = ['']
+            chat_state.info_location = ''
+            chat_state.info_keyword = ['']
+            chat_state.info_business_type = ['']
+            chat_state.original_question = ''
+            
+            print(f"답변 타입: 정량 모델")
+            print('여기서의 응답', result)
+            response = {
+                    "answer": result, 
+                    'title': rec['recommendation']['MCT_NM'].iloc[:min(3, len(rec['recommendation']))].tolist(), 
+                    'address': rec['recommendation']['ADDR'].iloc[:min(3, len(rec['recommendation']))].tolist(),
+                    'next_rec': ''
+                }
+            print('응답', response)
+            return response
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            # 추천 후 초기화
+            chat_state.info_menuplace = ['']
+            chat_state.info_location = ''
+            chat_state.info_keyword = ['']
+            chat_state.info_business_type = ['']
+            chat_state.original_question = ''
 
-        return response
+            return {
+                    "answer": "앗! 데이터 바다에서 추천을 건져오지 못했어요. 다른 질문으로 다시 시도해 보실래요?", 
+                    'title': [], 
+                    'address': [],
+                    'next_rec': ''
+                }

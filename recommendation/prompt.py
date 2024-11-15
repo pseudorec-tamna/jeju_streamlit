@@ -231,43 +231,43 @@ User's question:
 
 template_sql_prompt = """
 GOAL:
-* Based on the table schema below, Write a MySQL query that answer the user's question:
-* Please proceed available variable with the given TABLE SCHEMA. 
+* Write a MySQL query that answers the user's question based on the following table schema and available variables.
+* Ensure that you only use the variables specified in the TABLE SCHEMA section below. 
 
 TABLE SCHEMA:
-| 컬럼명 | 설명 | 데이터 타입 | 비고 | 가능한 값 |
-|--------|------|-------------|------|-----------|
-| YM | 기준연월 | STRING | 202301~202312 | 202301, 202302, 202303, 202304, 202305, 202306, 202307, 202308, 202309, 202310, 202311, 202312 |
-| MCT_NM | 가맹점명 | STRING | | |
-| OP_YMD | 개설일자 | STRING | 가맹점개설일자 | |
-| MCT_TYPE | 업종 | STRING | 요식관련 30개 업종 | 가정식, 단품요리 전문, 커피, 베이커리, 일식, 치킨, 중식, 분식, 햄버거, 양식, 맥주/요리주점, 아이스크림/빙수, 피자, 샌드위치/토스트, 차, 꼬치구이, 기타세계요리, 구내식당/푸드코트, 떡/한과, 도시락, 도너츠, 주스, 동남아/인도음식, 패밀리 레스토랑, 기사식당, 야식, 스테이크, 포장마차, 부페, 민속주점 |
-| ADDR | 주소 | STRING | 가맹점주소 | |
-| UE_CNT_GRP | 이용건수구간 | STRING | 월별 업종별 이용건수 분위수 구간을 6개 구간으로 집계, 상위 30% 매출 가맹점 내 분위수 구간 | 1_상위 10% 이하, 2_10~25%, 3_25~50%, 4_50~75%, 5_75~90%, 6_90% 초과(하위 10% 이하) |
-| UE_AMT_GRP | 이용금액구간 | STRING | 월별 업종별 이용금액 분위수 구간을 6개 구간으로 집계, 상위 30% 매출 가맹점 내 분위수 구간 | 1_상위 10% 이하, 2_10~25%, 3_25~50%, 4_50~75%, 5_75~90%, 6_90% 초과(하위 10% 이하) |
-| UE_AMT_PER_TRSN_GRP | 건당평균이용금액구간 | STRING | 월별 업종별 건당평균이용금액 분위수 구간을 6개 구간으로 집계, 상위 30% 매출 가맹점 내 분위수 구간 | 1_상위 10% 이하, 2_10~25%, 3_25~50%, 4_50~75%, 5_75~90%, 6_90% 초과(하위 10% 이하) |
-| MON_UE_CNT_RAT | 월요일이용건수비중 | FLOAT | | |
-| TUE_UE_CNT_RAT | 화요일이용건수비중 | FLOAT | | |
-| WED_UE_CNT_RAT | 수요일이용건수비중 | FLOAT | | |
-| THU_UE_CNT_RAT | 목요일이용건수비중 | FLOAT | | |
-| FRI_UE_CNT_RAT | 금요일이용건수비중 | FLOAT | | |
-| SAT_UE_CNT_RAT | 토요일이용건수비중 | FLOAT | | |
-| SUN_UE_CNT_RAT | 일요일이용건수비중 | FLOAT | | |
-| HR_5_11_UE_CNT_RAT | 5시11시이용건수비중 | FLOAT | | |
-| HR_12_13_UE_CNT_RAT | 12시13시이용건수비중 | FLOAT | | |
-| HR_14_17_UE_CNT_RAT | 14시17시이용건수비중 | FLOAT | | |
-| HR_18_22_UE_CNT_RAT | 18시22시이용건수비중 | FLOAT | | |
-| HR_23_4_UE_CNT_RAT | 23시4시이용건수비중 | FLOAT | | |
-| LOCAL_UE_CNT_RAT | 현지인이용건수비중 | FLOAT | 고객 자택 주소가 제주도인 경우를 현지인으로 정의 | |
-| RC_M12_MAL_CUS_CNT_RAT | 최근12개월남성회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
-| RC_M12_FME_CUS_CNT_RAT | 최근12개월여성회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
-| RC_M12_AGE_UND_20_CUS_CNT_RAT | 최근12개월20대이하회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
-| RC_M12_AGE_30_CUS_CNT_RAT | 최근12개월30대회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
-| RC_M12_AGE_40_CUS_CNT_RAT | 최근12개월40대회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
-| RC_M12_AGE_50_CUS_CNT_RAT | 최근12개월50대회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
-| RC_M12_AGE_OVR_60_CUS_CNT_RAT | 최근12개월60대이상회원수비중 | FLOAT | 기준연월 포함 최근 12개월 집계한 값 | |
+| Column Name | Description | Data Type | Notes | Possible Values |
+|-------------|-------------|-----------|-------|-----------------|
+| YM | Reference Month | STRING | 202301~202312 | 202301, 202302, 202303, 202304, 202305, 202306, 202307, 202308, 202309, 202310, 202311, 202312 |
+| MCT_NM | Merchant Name | STRING | | |
+| OP_YMD | Opening Date | STRING | Date the merchant opened | |
+| MCT_TYPE | Business Type | STRING | 30 categories of dining-related types | e.g., Family-style, Specialty, Coffee, Bakery, Japanese, Chicken, Chinese, Snack, Hamburger, etc. |
+| ADDR | Address | STRING | Merchant's address | |
+| UE_CNT_GRP | Usage Count Group | STRING | Grouped into 6 levels based on usage volume by month and industry | e.g., 1_Top 10%, 2_10~25%, 3_25~50%, etc. |
+| UE_AMT_GRP | Usage Amount Group | STRING | Grouped into 6 levels based on usage amount by month and industry | e.g., 1_Top 10%, 2_10~25%, 3_25~50%, etc. |
+| UE_AMT_PER_TRSN_GRP | Average Transaction Amount Group | STRING | Grouped into 6 levels based on average transaction amount by month and industry | e.g., 1_Top 10%, 2_10~25%, 3_25~50%, etc. |
+| MON_UE_CNT_RAT | Monday Usage Count Ratio | FLOAT | | |
+| TUE_UE_CNT_RAT | Tuesday Usage Count Ratio | FLOAT | | |
+| WED_UE_CNT_RAT | Wednesday Usage Count Ratio | FLOAT | | |
+| THU_UE_CNT_RAT | Thursday Usage Count Ratio | FLOAT | | |
+| FRI_UE_CNT_RAT | Friday Usage Count Ratio | FLOAT | | |
+| SAT_UE_CNT_RAT | Saturday Usage Count Ratio | FLOAT | | |
+| SUN_UE_CNT_RAT | Sunday Usage Count Ratio | FLOAT | | |
+| HR_5_11_UE_CNT_RAT | 5 AM to 11 AM Usage Ratio | FLOAT | | |
+| HR_12_13_UE_CNT_RAT | 12 PM to 1 PM Usage Ratio | FLOAT | | |
+| HR_14_17_UE_CNT_RAT | 2 PM to 5 PM Usage Ratio | FLOAT | | |
+| HR_18_22_UE_CNT_RAT | 6 PM to 10 PM Usage Ratio | FLOAT | | |
+| HR_23_4_UE_CNT_RAT | 11 PM to 4 AM Usage Ratio | FLOAT | | |
+| LOCAL_UE_CNT_RAT | Local User Usage Ratio | FLOAT | Defined as users with Jeju residence | |
+| RC_M12_MAL_CUS_CNT_RAT | 12-Month Male Customer Ratio | FLOAT | Aggregated for the past 12 months | |
+| RC_M12_FME_CUS_CNT_RAT | 12-Month Female Customer Ratio | FLOAT | Aggregated for the past 12 months | |
+| RC_M12_AGE_UND_20_CUS_CNT_RAT | 12-Month Under-20 Customer Ratio | FLOAT | Aggregated for the past 12 months | |
+| RC_M12_AGE_30_CUS_CNT_RAT | 12-Month 30s Customer Ratio | FLOAT | Aggregated for the past 12 months | |
+| RC_M12_AGE_40_CUS_CNT_RAT | 12-Month 40s Customer Ratio | FLOAT | Aggregated for the past 12 months | |
+| RC_M12_AGE_50_CUS_CNT_RAT | 12-Month 50s Customer Ratio | FLOAT | Aggregated for the past 12 months | |
+| RC_M12_AGE_OVR_60_CUS_CNT_RAT | 12-Month Over-60 Customer Ratio | FLOAT | Aggregated for the past 12 months | |
 
 DATA SAMPLE:
-Table Name : basic_info
+Table Name: basic_info
 | YM | MCT_NM | OP_YMD | MCT_TYPE | ADDR | UE_CNT_GRP | UE_AMT_GRP | UE_AMT_PER_TRSN_GRP | MON_UE_CNT_RAT | TUE_UE_CNT_RAT | WED_UE_CNT_RAT | THU_UE_CNT_RAT | FRI_UE_CNT_RAT | SAT_UE_CNT_RAT | SUN_UE_CNT_RAT | HR_5_11_UE_CNT_RAT | HR_12_13_UE_CNT_RAT | HR_14_17_UE_CNT_RAT | HR_18_22_UE_CNT_RAT | HR_23_4_UE_CNT_RAT | LOCAL_UE_CNT_RAT | RC_M12_MAL_CUS_CNT_RAT | RC_M12_FME_CUS_CNT_RAT | RC_M12_AGE_UND_20_CUS_CNT_RAT | RC_M12_AGE_30_CUS_CNT_RAT | RC_M12_AGE_40_CUS_CNT_RAT | RC_M12_AGE_50_CUS_CNT_RAT | RC_M12_AGE_OVR_60_CUS_CNT_RAT |
 |-----|--------|--------|----------|------|------------|------------|---------------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|---------------------|----------------------|----------------------|----------------------|---------------------|-------------------|--------------------------|--------------------------|----------------------------------|----------------------------|----------------------------|----------------------------|----------------------------------|
 | 202301 | 통큰돼지 | 20110701 | 가정식 | 제주 제주시 용담이동 2682-9번지 통큰돼지 | 5_75~90% | 4_50~75% | 3_25~50% | 0.16129 | 0.032258 | 0.129032 | 0.096774 | 0.16129 | 0.16129 | 0.258065 | 0.0 | 0.0 | 0.16129 | 0.83871 | 0.0 | 0.707763 | 0.61 | 0.39 | 0.103 | 0.124 | 0.245 | 0.387 | 0.142 |
@@ -276,25 +276,33 @@ Table Name : basic_info
 IMPORTANCE:
 * Ensure that the address specified in the query is accurate without missing or altering any characters. For example, if the location is "이도이동," make sure to include it exactly as "%이도이동%" in the query.
 * For conditions involving top or bottom percentages, ensure clarity in the MySQL query:
-* If the query requests the top 10%, select "1_상위 10% 이하" in the query.
-* If the query requests the top 20%, select "2_10~25%" in the query.
-* If the query requests the top 50%, select "3_25~50%" in the query.
-* If the query requests the top 5075%, select "4_50~75%" in the query.
-* If the query requests the top 7590%, select "5_75~90%" in the query.
-* If the query requests the top 90%, select "6_90%" in the query.
-* If the query requests the bottom 90%, select "1_상위 10% 이하" in the query.
-* If the query requests the bottom 7590%, select "2_10~25%" in the query.
-* If the query requests the bottom 50%, select "4_50~75%" in the query.
-* If the query requests the bottom 5075%, select "3_25~50%" in the query.
-* If the query requests the bottom 20%, select "5_75~90%" in the query.
-* If the query requests the bottom 10%, select "6_90%" in the query.
-* 기준연월에 대한 언급이 없으면 WHERE YM = '202312'을 기본으로 추가해주세요. 
-* SELECT는 MCT_NM만 추출하면 됩니다. 
+    - If the query requests the top 10%, select "1_상위 10% 이하" in the query.
+    - If the query requests the top 20%, select "2_10~25%" in the query.
+    - If the query requests the top 50%, select "3_25~50%" in the query.
+    - If the query requests the top 5075%, select "4_50~75%" in the query.
+    - If the query requests the top 7590%, select "5_75~90%" in the query.
+    - If the query requests the top 90%, select "6_90%" in the query.
+    - If the query requests the bottom 90%, select "1_상위 10% 이하" in the query.
+    - If the query requests the bottom 7590%, select "2_10~25%" in the query.
+    - If the query requests the bottom 50%, select "4_50~75%" in the query.
+    - If the query requests the bottom 5075%, select "3_25~50%" in the query.
+    - If the query requests the bottom 20%, select "5_75~90%" in the query.
+    - If the query requests the bottom 10%, select "6_90%" in the query.
+* If no reference month is given, use YM = '202312'.
+* Only select the column MCT_NM in the query result.
+* Only use the following VARIABLES:
 
-Question: 
+VARIABLES: 
+- YM, MCT_NM, OP_YMD, MCT_TYPE, ADDR, UE_CNT_GRP, UE_AMT_GRP, UE_AMT_PER_TRSN_GRP, MON_UE_CNT_RAT, TUE_UE_CNT_RAT, 
+  WED_UE_CNT_RAT, THU_UE_CNT_RAT, FRI_UE_CNT_RAT, SAT_UE_CNT_RAT, SUN_UE_CNT_RAT, HR_5_11_UE_CNT_RAT, HR_12_13_UE_CNT_RAT, 
+  HR_14_17_UE_CNT_RAT, HR_18_22_UE_CNT_RAT, HR_23_4_UE_CNT_RAT, LOCAL_UE_CNT_RAT, RC_M12_MAL_CUS_CNT_RAT, 
+  RC_M12_FME_CUS_CNT_RAT, RC_M12_AGE_UND_20_CUS_CNT_RAT, RC_M12_AGE_30_CUS_CNT_RAT, RC_M12_AGE_40_CUS_CNT_RAT, 
+  RC_M12_AGE_50_CUS_CNT_RAT, RC_M12_AGE_OVR_60_CUS_CNT_RAT
+
+EXAMPLE QUESTION1: 
 삼양삼동에서 야간(23시-4시) 이용 비중이 가장 낮은 단품요리 전문식당 중 남성 고객 비중이 가장 낮은 곳은?
 
-SQL Query: 
+QUESTION1 - SQL Query: 
 ```sql
 SELECT 
     `basic_info`.`MCT_NM`
@@ -314,10 +322,10 @@ ORDER BY
 LIMIT 1;
 ```
 
-Question:
+EXAMPLE QUESTION2: 
 성산읍에서 최근 12개월 동안 50대 고객 비중이 가장 높은 찻집은 어디인가요?
 
-SQL Query:
+QUESTION2 - SQL Query:
 ```sql
 SELECT 
     MCT_NM  -- 식당 이름
@@ -339,6 +347,6 @@ ORDER BY
     RC_M12_AGE_50_CUS_CNT_RAT DESC  -- 50대 고객 비중 내림차순으로 정렬하여 가장 높은 비중을 가진 식당을 먼저 보여줍니다.
 LIMIT 1;
 
-Question: {question}
+User's Question: {question}
 
 SQL Query:"""
