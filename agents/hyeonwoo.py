@@ -251,11 +251,11 @@ def get_hw_response(chat_state: ChatState):
             file.write(location)
 
         st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요. (한 번만 클릭하고 잠시 기다려주세요!)")
-        screen = st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
+        screen = st.components.v1.iframe('ec2-3-34-205-44.ap-northeast-2.compute.amazonaws.com:5000', width=650, height=600)
         if not st.session_state['screen_active']:
             st.session_state['screen_active'] = True
         while st.session_state['screen_active']: 
-            response = requests.get('http://127.0.0.1:5000/get_coordinates')
+            response = requests.get('ec2-3-34-205-44.ap-northeast-2.compute.amazonaws.com:5000/get_coordinates')
             coordinates = response.json()
             latitude = coordinates['latitude']
             longitude = coordinates['longitude']
