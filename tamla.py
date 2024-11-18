@@ -1,7 +1,4 @@
-import os
-from typing import Any
-
-from utils.prepare import DEFAULT_OPENAI_API_KEY, WEATHER_KEY, get_logger
+from utils.prepare import GEMINI_API_KEY, get_logger
 from utils.chat_state import ChatState
 from utils.type_utils import OperationMode
 from utils.prompts import ( 
@@ -15,10 +12,8 @@ from agents.keyword_quick import get_keywords_chat
 from agents.question_quick import get_question_chat_chain
 from agents.hyeonwoo import get_hw_response
 from utils.type_utils import ChatMode
-from langchain.memory import ConversationBufferWindowMemory
 
 logger = get_logger()
-
 default_vectorstore = None  # can move to chat_state
 
 
@@ -70,7 +65,7 @@ if __name__ == "__main__":
         ChatState(
             operation_mode=OperationMode.CONSOLE,
             chat_history=chat_history,
-            google_api_key=DEFAULT_OPENAI_API_KEY,
+            google_api_key=GEMINI_API_KEY,
             user_id=None,  # would be set to None by default but just to be explicit
         )
     )

@@ -1,33 +1,21 @@
-import json 
 from typing import Callable, Any
-
-from pydantic import BaseModel, Field
 from utils.query_parsing import ParsedQuery
 from utils.prepare import get_logger
 from utils.type_utils import (
-    COLLECTION_USERS_METADATA_KEY,
-    AccessCodeSettings,
     AccessRole,
     BotSettings,
     CallbacksOrNone,
     ChatMode,
-    CollectionPermissions,
-    CollectionUserSettings,
-    JSONishDict,
     OperationMode,
     PairwiseChatHistory,
     Props
 )
 from langchain_core.documents import Document
 from langchain.memory import ConversationBufferMemory
-from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 from utils.client import get_vectordb
 logger = get_logger()
 vdb_instance = None
 vdb = get_vectordb()
-
-import chromadb
-from langchain_chroma import Chroma
 
 class ChatState:
     def __init__(

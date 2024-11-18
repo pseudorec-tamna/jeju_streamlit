@@ -1,6 +1,6 @@
 from typing import Any
 from uuid import UUID
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
 from utils.type_utils import BotSettings, CallbacksOrNone
 from langchain_core.language_models import BaseChatModel
 from utils.prepare import (
@@ -67,25 +67,25 @@ def get_llm_with_gemini(
     return llm
 
 
-def get_llm_with_callbacks(
-    settings: BotSettings, api_key: str | None = None, callbacks: CallbacksOrNone = None
-) -> BaseChatModel:
-    """
-    Returns a chat model instance (either AzureChatOpenAI or ChatOpenAI, depending
-    on the value of IS_AZURE). In the case of AzureChatOpenAI, the model is
-    determined by CHAT_DEPLOYMENT_NAME (and other Azure-specific environment variables),
-    not by settings.model_name.
-    """
-    llm = ChatOpenAI(
-        api_key=api_key or "",  # don't allow None, no implicit key from env
-        model=settings.llm_model_name,
-        temperature=settings.temperature,
-        request_timeout=LLM_REQUEST_TIMEOUT,
-        streaming=True,
-        callbacks=callbacks,
-        verbose=True,  # tmp
-    )
-    return llm
+# def get_llm_with_callbacks(
+#     settings: BotSettings, api_key: str | None = None, callbacks: CallbacksOrNone = None
+# ) -> BaseChatModel:
+#     """
+#     Returns a chat model instance (either AzureChatOpenAI or ChatOpenAI, depending
+#     on the value of IS_AZURE). In the case of AzureChatOpenAI, the model is
+#     determined by CHAT_DEPLOYMENT_NAME (and other Azure-specific environment variables),
+#     not by settings.model_name.
+#     """
+#     llm = ChatOpenAI(
+#         api_key=api_key or "",  # don't allow None, no implicit key from env
+#         model=settings.llm_model_name,
+#         temperature=settings.temperature,
+#         request_timeout=LLM_REQUEST_TIMEOUT,
+#         streaming=True,
+#         callbacks=callbacks,
+#         verbose=True,  # tmp
+#     )
+#     return llm
 
 class CallbackHandlerDDGConsole(BaseCallbackHandler):
     def __init__(self, init_str: str = MAIN_BOT_PREFIX):
