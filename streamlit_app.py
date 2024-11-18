@@ -1,5 +1,4 @@
 import os
-
 import streamlit as st
 from PIL import Image
 from utils.prepare import (
@@ -12,33 +11,25 @@ from agents.final_pretty import df_filter, display_store_info
 from utils.chat_state import ChatState
 from utils.streamlit.prepare import prepare_app
 from utils.helpers import (
-    DELIMITER,
     GREETING_MESSAGE_KOR,
     GREETING_MESSAGE_ENG,
     VERSION,
-    WALKTHROUGH_TEXT,
 )
 from utils.type_utils import (
     ChatMode
 )
-from utils.lang_utils import pairwise_chat_history_to_msg_list
 from utils.streamlit.helpers import (
     mode_options,
     age_options,
     STAND_BY_FOR_INGESTION_MESSAGE,
     status_config,
-    show_sources,
-    show_downloader,
-    fix_markdown,    
-    show_uploader,
     just_chat_status_config,
 )
 import streamlit.components.v1 as components
 from tamla import get_bot_response
 from components.sql_trend import trend_df
-import requests
 import subprocess
-import time
+
 
 # 로그 설정 
 logger = get_logger()
@@ -84,15 +75,25 @@ if "chat_state" not in ss:
 chat_state: ChatState = ss.chat_state
 
 # Define the port and start the Flask server as a subprocess
-FLASK_PORT = 5000
+# FLASK_PORT = 5000
+import subprocess
+import socket
+
+# Flask 서버 포트를 확인
+def is_port_in_use(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
 
 # Flask 백그라운드 서버 실행
-def run_flask():
-    subprocess.Popen(["python", "app.py"])
-
-# 백그라운드로 Flask 서버 시작
-run_flask()
-time.sleep(1)  # 서버가 시작될 때까지 잠시 대기
+def start_flask():
+    port = 5000
+    if not is_port_in_use(port):
+        # Flask 서버 실행
+        command = ["gunicorn", "-w", "4", "-b", f"0.0.0.0:{port}", "app:app"]
+        return subprocess.Popen(command)
+    else:
+        st.warning(f"Flask 서버가 이미 실행 중입니다. (포트: {port})")
+        return None
 
 # 스크롤 자동화용 자바스크립트 삽입
 def scroll_to_bottom():
@@ -208,28 +209,19 @@ def open_ai_chat(eng_flag=False):
 
             # Add the response to the chat history
             chat_state.chat_history.append((prompt, answer))
-            # chat_state.memory.load_memory_variables({})["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-
-            # 로봇 말 생성
-            # message_placeholder.markdown(answer) # fix_markdown
 
             if len(info_box) > 0:
                 info_box_html = wrap_info_box(info_box)
                 # st.markdown(wrap_info_box(info_box), unsafe_allow_html=True)
             else: 
                 info_box_html = ""
-
         # Assistant 메시지와 info_box를 함께 추가 (HTML 포함)
         ss.messages.append({"role": "assistant", "content": f"<p>{answer}</p>{info_box_html}{next_rec}"})
-
         # 페이지 마지막으로 스크롤 자동화
         scroll_to_bottom()    
-
         # 페이지 새로고침
         st.rerun()
- 
-    # else:
-    #     st.info("OpenAI API 키를 입력해주세요.", icon="🗝️")
+
 
 def user_id_setting(): 
     user_id = st.sidebar.text_input("User ID", 
@@ -254,12 +246,7 @@ def user_id_setting():
             chat_state.chat_history_all.append(
                 ("", "앞으로 내 이름을 언급하면서, 친절하게 답변해줘. 내 이름은 " + chat_state.user_id + ".")
             )
-
 def age():
-    # 세션 상태 초기화
-    # if 'selected_age_groups' not in chat_state:
-    # chat_state.selected_age_groups = [list(age_options.keys())[1]]
-
     # Default mode
     with st.expander("나이대 선택", expanded=True):
         selected_age_groups = st.multiselect(
@@ -795,6 +782,7 @@ def mode_selection():
                     chat_state.chat_history_all.append(("", "20대가 가장 많이 이용하는 맛집"))
 
 def main():
+    flask_process = start_flask()
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
 
@@ -891,6 +879,5 @@ def main():
             st.markdown(format_robot_response(full_message), unsafe_allow_html=True)
 
             open_ai_chat()  
-
 if __name__ == '__main__':
     main()  

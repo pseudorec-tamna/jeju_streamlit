@@ -1,59 +1,26 @@
 
 import pandas as pd
-import google.generativeai as genai
 import os
 import random
 import streamlit as st
-from langchain_community.utilities import SQLDatabase
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-
 from utils.chat_state import ChatState
 from utils.prompts import chat_prompt_template, multi_turn_prompt_template, recommendation_keyword_prompt_template
-
-from recommendation.prompt import sub_task_detection_prompt
 from recommendation.utils import json_format
-# from colorama import Fore, Style
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
-from langchain.memory import ConversationBufferWindowMemory
 from recommendation.utils import sub_task_detection
-from recommendation.distance_based import distance_based_recommendation, get_coordinates_by_question, coordinates_based_recommendation
+from recommendation.distance_based import  coordinates_based_recommendation
 import requests, time
-import subprocess
-from recommendation.sql_based import extract_sql_query, sql_based_recommendation
-from recommendation.prompt import template_sql_prompt
 from recommendation.context_based import context_based_recommendation
-
 from utils.client import MysqlClient
-# from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
-import numpy as np
-from langchain_community.vectorstores import Chroma
-from langchain.schema import Document
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
-from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 from utils.client import get_vectordb
 vdb = get_vectordb()
-
-# df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
-# df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
-# df = df.reset_index(drop=True)
-
-# database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
-# meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
 mysql = MysqlClient()
 
-# query = f"select * from tamdb.basic_info_1"
-# mysql.cursor.execute(query)
-# rows = mysql.cursor.fetchall()
-# columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-# df_quan = pd.DataFrame(rows, columns=columns)
-# df = df.merge(meta_info[["MCT_NM", "ADDR", "MCT_TYPE"]], how="left", on=["MCT_NM","ADDR"])
-
 print("-----------MYSQL Start")
-query = f"select * from tamdb.detailed_info_1"
+query = f"select * from tamdb.detailed_info_new_test4"
 mysql.cursor.execute(query)
 rows = mysql.cursor.fetchall()
 columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
@@ -120,8 +87,9 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
     if len(name_condition)!=0:
         # hugging_retriever 설정
         hugging_retriever = hugging_vectorstore.as_retriever(
-            search_type='similarity',
+            search_type='similarity_score_threshold',
             search_kwargs={
+                'score_threshold': 0.001,
                 'k': 100,
                 'filter': {
                     "$and": [
@@ -157,23 +125,15 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
         docs = hugging_retriever.invoke(
             ' '.join(query_rewrite)
         )
-
-    
     for doc in docs:
         row.append(doc.metadata)
     rec = pd.DataFrame(row).reset_index()
-    # print(rec["location"].values)
 
-    # print(rec[["name", "average_score", "review_counts"]])
-    # print(rec.columns)
     """
     답변 {'recommendation_factors': {'location': '서귀포시', 'menu_place': ['고기국수'], 'keyword': ['현지인들이 많이 가는'], 'business_type': ['단품요리 전문', '가정식', '분식']}, 'processing': "The user provided '서귀포시' as a location, which means they want to find a '고기국수' restaurant in '서귀포시'. Since the user has narrowed down their search by providing a location, and we have the 'keyword' and 'menu_place' from the previous conversation, this time we will choose 'Keyword-based' recommendation.", 'original_question': '제주도 고기국수 맛집 중에서 현지인들이 많이 가는 곳 추천해줘. 서귀포시', 'response_type': 'Keyword-based'}
     # 변수 정보 : ['index', 'average_price', 'average_score', 'companion_info', 'feature_info', 'full_location', 'location', 'menu_info', 'name', 'payment_method', 'reservation_info', 'review_counts', 'review_summary', 'revisit_info', 'type', 'waiting_info']
     # average_score or review_counts를 기준으로 정렬하기 
     """
-    # Reranking 돌리면 될 듯
-    # 빈 값이 있는지 확인
-    # 'v_review_cnt', 'b_review_cnt'
 
     print(f"\n\n\n\n결과값 조회: {rec}\n\n\n\n")
 
@@ -272,7 +232,6 @@ def get_hw_response(chat_state: ChatState):
     menuplace = chat_state.info_menuplace = recommendation_factors['menu_place'] = list(set(recommendation_factors['menu_place'] + chat_state.info_menuplace))
     location = chat_state.info_location = recommendation_factors['location'] = recommendation_factors['location'] if (chat_state.info_location == '' or chat_state.info_location == recommendation_factors['location']) else chat_state.info_location + recommendation_factors['location']
     keyword = chat_state.info_keyword = recommendation_factors['keyword'] = list(set(recommendation_factors['keyword'] + chat_state.info_keyword))
-    business_type = chat_state.info_business_type = recommendation_factors['business_type'] = list(set(recommendation_factors['business_type'] + chat_state.info_business_type))
     query_rewrite = chat_state.query_rewrite = recommendation_factors["query_rewrite"] 
     
     if response_type == "Chat": 
@@ -283,14 +242,20 @@ def get_hw_response(chat_state: ChatState):
 
     elif response_type == "Distance-based":
         # coord = get_coordinates_by_question(chat_state.message)
+        # if "coordinates_received" not in st.session_state:
+        #     st.session_state.coordinates_received = False
+        if 'screen_active' not in st.session_state:
+            st.session_state['screen_active'] = False
+
         with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
             file.write(location)
 
         st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요. (한 번만 클릭하고 잠시 기다려주세요!)")
-        st.components.v1.iframe('http://127.0.0.1:5000', width=650, height=600)
-        
-        while True: 
-            response = requests.get('http://127.0.0.1:5000/get_coordinates')
+        screen = st.components.v1.iframe('ec2-3-34-205-44.ap-northeast-2.compute.amazonaws.com:5000', width=650, height=600)
+        if not st.session_state['screen_active']:
+            st.session_state['screen_active'] = True
+        while st.session_state['screen_active']: 
+            response = requests.get('ec2-3-34-205-44.ap-northeast-2.compute.amazonaws.com:5000/get_coordinates')
             coordinates = response.json()
             latitude = coordinates['latitude']
             longitude = coordinates['longitude']
@@ -298,6 +263,7 @@ def get_hw_response(chat_state: ChatState):
             print(latitude)
             print(longitude)
             if latitude is not None and longitude is not None:
+                st.session_state['screen_active'] = False
                 break
             time.sleep(1)
         

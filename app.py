@@ -147,9 +147,12 @@ def index():
                             infowindow.close();
                         });
 
+<<<<<<< HEAD
                         itemEl.onclick = function() {
                             sendCoordinates(lat, lng);
                         };
+=======
+>>>>>>> feat/spare1118
 
                         itemEl.onmouseover = function () {
                             displayInfowindow(marker, title);
@@ -307,6 +310,59 @@ def index():
                     console.error('Error:', error);
                 });
             }
+<<<<<<< HEAD
+=======
+            // 지도 클릭 이벤트 추가
+            kakao.maps.event.addListener(map, 'click', function(mouseEvent) {        
+                // 클릭한 위치의 좌표를 가져옵니다
+                var latlng = mouseEvent.latLng;
+
+                // 위도와 경도를 메시지로 출력하거나 활용
+                var message = '클릭한 위치의 위도는 ' + latlng.getLat() + ' 이고, ';
+                message += '경도는 ' + latlng.getLng() + ' 입니다';
+
+                // 콘솔 출력
+                console.log(message);
+
+                // HTML 결과 영역에 출력 (id: result)
+                var resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = message;
+
+                // 기존 마커를 모두 제거
+                removeMarker();
+
+                // 클릭한 위치에 새로운 마커 추가
+                var marker = new kakao.maps.Marker({
+                    position: latlng, // 클릭한 좌표
+                    map: map // 현재 지도에 추가
+                });
+
+                // 마커 배열에 추가
+                markers.push(marker);
+                coordinates(latlng.getLat(), latlng.getLng())
+
+                function coordinates(lat, lng) {
+                    console.log("get_coordinates 호출됨!");
+                    console.log("위도: " + lat + ", 경도: " + lng);
+
+                    // 서버로 데이터 전송 (예: fetch 활용)
+                    fetch('/click', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ latitude: lat, longitude: lng })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('서버 응답:', data);
+                    })
+                    .catch(error => {
+                        console.error('에러 발생:', error);
+                    });
+                }
+            });
+>>>>>>> feat/spare1118
         </script>
     </body>
     </html>

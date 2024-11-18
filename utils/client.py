@@ -5,7 +5,6 @@ from sqlalchemy import create_engine
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import boto3
-from langchain.vectorstores import FAISS
 vdb_instance = None
 
 load_dotenv()
@@ -62,6 +61,7 @@ class vectordb:
                 continue  # 폴더 경로는 건너뜁니다.
             local_file_path = os.path.join(local_path, os.path.basename(file_key))
             self.s3.download_file(bucket_name, file_key, local_file_path)
+    
 
     def embedding_model(self):
         print('임베딩모델 다운로드중')
