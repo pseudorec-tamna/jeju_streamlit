@@ -5,14 +5,10 @@ from pydantic import BaseModel, Field
 from utils.query_parsing import ParsedQuery
 from utils.prepare import get_logger
 from utils.type_utils import (
-    COLLECTION_USERS_METADATA_KEY,
-    AccessCodeSettings,
     AccessRole,
     BotSettings,
     CallbacksOrNone,
     ChatMode,
-    CollectionPermissions,
-    CollectionUserSettings,
     JSONishDict,
     OperationMode,
     PairwiseChatHistory,
