@@ -1,25 +1,6 @@
 
-import pandas as pd
-import google.generativeai as genai
-import os
-import streamlit as st
 from utils.chat_state import ChatState
-from utils.client import MysqlClient
-
-# df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
-# df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
-# df = df.reset_index(drop=True)
-
-# database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
-# meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
-mysql = MysqlClient()
-
-# SQL 쿼리를 실행하고 DataFrame으로 변환하는 함수
-def run_query(query):
-    mysql.cursor.execute(query)
-    rows = mysql.cursor.fetchall()
-    columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-    return pd.DataFrame(rows, columns=columns)
+from utils.client import run_query
 
 def df_local_sql(list_price):
     # 현지인 비중이 높은 맛집

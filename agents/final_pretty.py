@@ -10,22 +10,12 @@ from utils.chat_state import ChatState
 # from tamla import load_memory
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 import streamlit as st 
-from utils.client import MysqlClient
-
-mysql = MysqlClient()
-query = f"select * from tamdb.detailed_info_1"
-mysql.cursor.execute(query)
-rows = mysql.cursor.fetchall()
-columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-df = pd.DataFrame(rows, columns=columns)
+from utils.client import df
 
 
 def load_memory(input, chat_state):
-    # print("chat_state:", chat_state.memory)
     memory_vars = chat_state.memory.load_memory_variables({})
     memory_vars["chat_history"] = pairwise_chat_history_to_msg_list(chat_state.chat_history)
-    # print("chat_history:", memory_vars["chat_history"])
-    # memory_vars.get("chat_history", [])
     return memory_vars.get("chat_history", [])
 
 
