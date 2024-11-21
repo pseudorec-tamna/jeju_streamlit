@@ -13,27 +13,10 @@ from recommendation.utils import sub_task_detection
 from recommendation.distance_based import  coordinates_based_recommendation
 import requests, time
 from recommendation.context_based import context_based_recommendation
-from utils.client import MysqlClient
 from utils.lang_utils import pairwise_chat_history_to_msg_list
-from utils.client import get_vectordb
+from utils.client import get_vectordb, df, df_refer
 vdb = get_vectordb()
-mysql = MysqlClient()
 
-print("-----------MYSQL Start")
-query = f"select * from tamdb.detailed_info_new_test4"
-mysql.cursor.execute(query)
-rows = mysql.cursor.fetchall()
-columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-df = pd.DataFrame(rows, columns=columns)
-df['ADDR_detail'] = df['ADDR'].map(lambda x: ' '.join(x.split(' ')[1:3]))
-
-
-
-query = f"select * from tamdb.attraction_info"
-mysql.cursor.execute(query)
-rows = mysql.cursor.fetchall()
-columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-df_refer = pd.DataFrame(rows, columns=columns)
 
 path_visit_additional_info = './data/poi_df.csv' # 방문이력 데이터에 대한 id 크롤링 따로 진행
 path_transition_matrix = './data/transition_matrix.csv'
@@ -42,7 +25,6 @@ transition_matrix_df = pd.read_csv(path_transition_matrix)
 visit_poi_df = pd.read_csv(path_visit_additional_info)
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print("-----------MYSQL End")
 
 
 def load_memory(input, chat_state):

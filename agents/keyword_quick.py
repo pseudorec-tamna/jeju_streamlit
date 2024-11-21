@@ -12,32 +12,9 @@ from recommendation.utils import json_format
 # from colorama import Fore, Style
 from langchain_core.runnables import RunnablePassthrough
 from recommendation.utils import sub_task_detection
-from utils.client import MysqlClient
-# from tamla import load_memory
+from utils.client import df
 from utils.lang_utils import pairwise_chat_history_to_msg_list
 
-
-# df = pd.read_csv("./data/additional_info.csv", encoding='cp949')
-# df = df.drop_duplicates(subset=["MCT_NM"], keep="last")
-# df = df.reset_index(drop=True)
-
-# database = pd.read_csv("./data/JEJU_MCT_DATA_v2.csv", encoding='cp949')
-# meta_info = database.drop_duplicates(subset=["MCT_NM"], keep="last")
-mysql = MysqlClient()
-
-query = f"select * from tamdb.detailed_info_1"
-mysql.cursor.execute(query)
-rows = mysql.cursor.fetchall()
-columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-df = pd.DataFrame(rows, columns=columns)
-df['ADDR_detail'] = df['ADDR'].map(lambda x: ' '.join(x.split(' ')[1:3]))
-# df = df.merge(meta_info[["MCT_NM", "ADDR", "MCT_TYPE"]], how="left", on=["MCT_NM","ADDR"])
-
-query = f"select * from tamdb.attraction_info"
-mysql.cursor.execute(query)
-rows = mysql.cursor.fetchall()
-columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
-df_refer = pd.DataFrame(rows, columns=columns)
 
 path_visit_additional_info = './data/poi_df.csv' # 방문이력 데이터에 대한 id 크롤링 따로 진행
 path_transition_matrix = './data/transition_matrix.csv'

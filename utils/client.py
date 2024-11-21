@@ -5,11 +5,11 @@ from sqlalchemy import create_engine
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import boto3
+import pandas as pd
 vdb_instance = None
 
 load_dotenv()
 
-# mysql 모듈 임포트
 class MysqlClient:
     def __init__(self):
         self.endpoint = os.getenv("DB_HOST")
@@ -44,12 +44,6 @@ class vectordb:
         self.download_s3_folder(self.c_bucket_name, self.c_folder_path, self.c_local_path)
         self.embedding = self.embedding_model()
         self.hugging_vectorstore = Chroma(persist_directory=self.c_local_path , embedding_function=self.embedding)
-        # self.hugging_vectorstore = FAISS.load_local(
-        #     folder_path=self.c_local_path,
-        #     index_name="faiss_index",
-        #     embeddings=self.embedding,
-        #     allow_dangerous_deserialization=True,
-        # )
     def download_s3_folder(self, bucket_name, folder_path, local_path):
         print('vectorDB 다운로드중')
         os.makedirs(local_path, exist_ok=True)
@@ -84,3 +78,23 @@ def get_vectordb():
     if vdb_instance is None:
         vdb_instance = vectordb()  # 인스턴스를 한 번만 생성
     return vdb_instance
+def run_query(query):
+    mysql = MysqlClient()
+    
+    mysql.cursor.execute(query)
+    print('쿼리 실행 성공')
+    rows = mysql.cursor.fetchall()
+    columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
+    mysql.cursor.close()
+    return pd.DataFrame(rows, columns=columns)
+
+# mysql 모듈 임포트
+df_query = f"select * from tamdb.detailed_info_new_test4"
+attraction_query = f"select * from tamdb.attraction_info"
+basic_query = f"select * from tamdb.basic_info_1"
+
+df = run_query(df_query)
+df['ADDR_detail'] = df['ADDR'].map(lambda x: ' '.join(x.split(' ')[1:3]))
+df_refer = run_query(attraction_query)
+df_quan = run_query(basic_query)
+
