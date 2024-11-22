@@ -80,20 +80,20 @@ import subprocess
 import socket
 
 # Flask 서버 포트를 확인
-def is_port_in_use(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
+# def is_port_in_use(port):
+#    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+#        return s.connect_ex(('localhost', port)) == 0
 
 # Flask 백그라운드 서버 실행
-def start_flask():
-    port = 5000
-    if not is_port_in_use(port):
-        # Flask 서버 실행
-        command = ["gunicorn", "-w", "4", "-b", f"0.0.0.0:{port}", "app:app"]
-        return subprocess.Popen(command)
-    else:
-        st.warning(f"Flask 서버가 이미 실행 중입니다. (포트: {port})")
-        return None
+#def start_flask():
+#    port = 5000
+#    if not is_port_in_use(port):
+#        # Flask 서버 실행
+#        command = ["gunicorn", "-w", "4", "-b", f"0.0.0.0:{port}", "app:app"]
+#        return subprocess.Popen(command)
+#    else:
+#        st.warning(f"Flask 서버가 이미 실행 중입니다. (포트: {port})")
+#        return None
 
 # 스크롤 자동화용 자바스크립트 삽입
 def scroll_to_bottom():
@@ -782,7 +782,7 @@ def mode_selection():
                     chat_state.chat_history_all.append(("", "20대가 가장 많이 이용하는 맛집"))
 
 def main():
-    flask_process = start_flask()
+#    flask_process = start_flask()
     if tmp := os.getenv("STREAMLIT_WARNING_NOTIFICATION"):
         st.warning(tmp)    
 

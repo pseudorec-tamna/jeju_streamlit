@@ -81,7 +81,7 @@ def index():
             </div>
         </div>
         <p id="result"></p>
-        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=630c6b708b875156ab7fcaf34b88ec1e&libraries=services"></script>
+        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4a974e7605fa913a86b9a85a14340e86&libraries=services"></script>
         <script>
             var markers = [];
             var mapContainer = document.getElementById('map');
@@ -146,13 +146,6 @@ def index():
                         kakao.maps.event.addListener(marker, 'mouseout', function() {
                             infowindow.close();
                         });
-
-<<<<<<< HEAD
-                        itemEl.onclick = function() {
-                            sendCoordinates(lat, lng);
-                        };
-=======
->>>>>>> feat/spare1118
 
                         itemEl.onmouseover = function () {
                             displayInfowindow(marker, title);
@@ -310,8 +303,6 @@ def index():
                     console.error('Error:', error);
                 });
             }
-<<<<<<< HEAD
-=======
             // 지도 클릭 이벤트 추가
             kakao.maps.event.addListener(map, 'click', function(mouseEvent) {        
                 // 클릭한 위치의 좌표를 가져옵니다
@@ -362,7 +353,6 @@ def index():
                     });
                 }
             });
->>>>>>> feat/spare1118
         </script>
     </body>
     </html>
@@ -386,6 +376,6 @@ def get_coordinates():
     return jsonify(coords)
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(host= '0.0.0.0',port=5000)
 
 

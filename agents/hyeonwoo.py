@@ -14,7 +14,7 @@ from recommendation.distance_based import  coordinates_based_recommendation
 import requests, time
 from recommendation.context_based import context_based_recommendation
 from utils.lang_utils import pairwise_chat_history_to_msg_list
-from utils.client import get_vectordb, df, df_refer
+from utils.client import get_vectordb, df, df_refer, send_location_to_flask, FLASK_SERVER_URL
 vdb = get_vectordb()
 
 
@@ -229,15 +229,15 @@ def get_hw_response(chat_state: ChatState):
         if 'screen_active' not in st.session_state:
             st.session_state['screen_active'] = False
 
-        with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
-            file.write(location)
-
+#        with open(base_dir+"/data/location.txt", "w", encoding="utf-8") as file:
+#            file.write(location)
+        send_location_to_flask(location)
         st.write("어느 위치에서 출발하시나요? 정확한 주소를 지도에서 검색 후 클릭해주세요. (한 번만 클릭하고 잠시 기다려주세요!)")
-        screen = st.components.v1.iframe('ec2-3-34-205-44.ap-northeast-2.compute.amazonaws.com:5000', width=650, height=600)
+        screen = st.components.v1.iframe(f'{FLASK_SERVER_URL}', width=650, height=600)
         if not st.session_state['screen_active']:
             st.session_state['screen_active'] = True
         while st.session_state['screen_active']: 
-            response = requests.get('ec2-3-34-205-44.ap-northeast-2.compute.amazonaws.com:5000/get_coordinates')
+            response = requests.get(f'{FLASK_SERVER_URL}/get_coordinates')
             coordinates = response.json()
             latitude = coordinates['latitude']
             longitude = coordinates['longitude']

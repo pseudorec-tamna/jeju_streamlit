@@ -6,6 +6,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import boto3
 import pandas as pd
+import requests
 vdb_instance = None
 
 load_dotenv()
@@ -87,6 +88,26 @@ def run_query(query):
     columns = [i[0] for i in mysql.cursor.description]  # 컬럼 이름 가져오기
     mysql.cursor.close()
     return pd.DataFrame(rows, columns=columns)
+
+# Flask 서버 URL
+FLASK_SERVER_URL = os.getenv('FLASK_SERVER_URL')
+
+def send_location_to_flask(location):
+    """
+    Streamlit에서 입력받은 location 값을 Flask 서버에 전달.
+    """
+    try:
+        response = requests.post(
+            f"{FLASK_SERVER_URL}/set_search",
+            json={"keyword": location},
+        )
+        if response.status_code == 200:
+            print("Flask 서버로 location 전달 성공:", response.json())
+        else:
+            print("Flask 서버로 location 전달 실패:", response.status_code, response.text)
+    except Exception as e:
+        print("Flask 서버와 통신 중 오류 발생:", str(e))
+
 
 # mysql 모듈 임포트
 df_query = f"select * from tamdb.detailed_info_new_test4"
