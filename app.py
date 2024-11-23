@@ -1,381 +1,80 @@
+from flask import Flask, render_template, request, jsonify
 import os
-from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
 
 # 전역 변수로 위도와 경도 저장
 latitude = None
 longitude = None
+search_keyword = None
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-@app.route('/')
+#@app.route("/")
+#def index():
+#    # 위치 파일에서 검색 키워드를 읽음
+#    location_file = os.path.join(base_dir, "data", "location.txt")
+#    if os.path.exists(location_file):
+#        with open(location_file, "r", encoding="utf-8") as file:
+#            location = file.read()
+#    else:
+#        location = "제주"  # 기본 검색 키워드
+    
+#    # HTML 파일을 템플릿으로 렌더링
+#    return render_template("index.html", search_keyword=location)
+
+# 메인 화면
+# @app.route('/')
+# def index():
+#     global search_keyword
+#     # location.txt에서 초기 검색어를 읽어옴
+#     with open(os.path.join(base_dir, "data/location.txt"), "r", encoding="utf-8") as file:
+#         search_keyword = file.read().strip() or "제주"
+
+#     return render_template('index.html', search_keyword=search_keyword)
+
+@app.route("/")
 def index():
-    with open(base_dir+"/data/location.txt", "r", encoding="utf-8") as file:
-        location = file.read()
+    """
+    index.html 렌더링.
+    전달된 search_keyword를 검색창 기본값으로 설정.
+    """
+    global search_keyword
+    if not search_keyword:  # search_keyword가 없으면 기본값 설정
+        search_keyword = "제주"
+    return render_template("index.html", search_keyword=search_keyword)
 
-    # 지도 및 검색 UI를 반환하는 HTML
-    search_keyword = location or "제주"
+# 검색어 저장 API
+@app.route('/set_search', methods=['POST'])
+def set_search():
+    global search_keyword
+    data = request.get_json()
+    search_keyword = data.get('keyword', '제주')
+    # location.txt에 저장
+    with open(os.path.join(base_dir, "data/location.txt"), "w", encoding="utf-8") as file:
+        file.write(search_keyword)
+    return jsonify({"message": "Search keyword updated", "keyword": search_keyword})
 
-    return render_template_string('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>키워드로 장소검색하고 목록으로 표출하기</title>
-        <style>
-            .map_wrap, .map_wrap * {margin:0;padding:0;font-family:'Malgun Gothic',dotum,'돋움',sans-serif;font-size:12px;}
-            .map_wrap a, .map_wrap a:hover, .map_wrap a:active{color:#000;text-decoration: none;}
-            .map_wrap {position:relative;width:100%;height:500px;}
-            #menu_wrap {position:absolute;top:0;left:0;bottom:0;width:250px;margin:10px 0 30px 10px;padding:5px;overflow-y:auto;background:rgba(255, 255, 255, 0.7);z-index: 1;font-size:12px;border-radius: 10px;}
-            .bg_white {background:#fff;}
-            #menu_wrap hr {display: block; height: 1px;border: 0; border-top: 2px solid #5F5F5F;margin:3px 0;}
-            #menu_wrap .option{text-align: center;}
-            #menu_wrap .option p {margin:10px 0;}  
-            #menu_wrap .option button {margin-left:5px;}
-            #placesList li {list-style: none;}
-            #placesList .item {position:relative;border-bottom:1px solid #888;overflow: hidden;cursor: pointer;min-height: 65px;}
-            #placesList .item span {display: block;margin-top:4px;}
-            #placesList .item h5, #placesList .item .info {text-overflow: ellipsis;overflow: hidden;white-space: nowrap;}
-            #placesList .item .info{padding:10px 0 10px 55px;}
-            #placesList .info .gray {color:#8a8a8a;}
-            #placesList .info .jibun {padding-left:26px;background:url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/places_jibun.png) no-repeat;}
-            #placesList .info .tel {color:#009900;}
-            #placesList .item .markerbg {float:left;position:absolute;width:36px; height:37px;margin:10px 0 0 10px;background:url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_number_blue.png) no-repeat;}
-            #placesList .item .marker_1 {background-position: 0 -10px;}
-            #placesList .item .marker_2 {background-position: 0 -56px;}
-            #placesList .item .marker_3 {background-position: 0 -102px}
-            #placesList .item .marker_4 {background-position: 0 -148px;}
-            #placesList .item .marker_5 {background-position: 0 -194px;}
-            #placesList .item .marker_6 {background-position: 0 -240px;}
-            #placesList .item .marker_7 {background-position: 0 -286px;}
-            #placesList .item .marker_8 {background-position: 0 -332px;}
-            #placesList .item .marker_9 {background-position: 0 -378px;}
-            #placesList .item .marker_10 {background-position: 0 -423px;}
-            #placesList .item .marker_11 {background-position: 0 -470px;}
-            #placesList .item .marker_12 {background-position: 0 -516px;}
-            #placesList .item .marker_13 {background-position: 0 -562px;}
-            #placesList .item .marker_14 {background-position: 0 -608px;}
-            #placesList .item .marker_15 {background-position: 0 -654px;}
-            #pagination {margin:10px auto;text-align: center;}
-            #pagination a {display:inline-block;margin-right:10px;}
-            #pagination .on {font-weight: bold; cursor: default;color:#777;}
-        </style>
-    </head>
-    <body>
-        <div class="map_wrap">
-            <div id="map" style="width:100%;height:100%;position:relative;overflow:hidden;"></div>
 
-            <div id="menu_wrap" class="bg_white">
-                <div class="option">
-                    <div>
-                        <form onsubmit="searchPlaces(); return false;">
-                            키워드 : <input type="text" value={{ search_keyword }} id="keyword" size="15"> 
-                            <button type="submit">검색하기</button> 
-                        </form>
-                    </div>
-                </div>
-                <hr>
-                <ul id="placesList"></ul>
-                <div id="pagination"></div>
-            </div>
-        </div>
-        <p id="result"></p>
-        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4a974e7605fa913a86b9a85a14340e86&libraries=services"></script>
-        <script>
-            var markers = [];
-            var mapContainer = document.getElementById('map');
-            var mapOption = {
-                center: new kakao.maps.LatLng(33.49962, 126.531188),
-                level: 3
-            };
-
-            var map = new kakao.maps.Map(mapContainer, mapOption);
-            var ps = new kakao.maps.services.Places();
-            var infowindow = new kakao.maps.InfoWindow({zIndex:1});
-
-            // 제주도 경계 설정 (서귀포와 제주시 좌표)
-            var bounds = new kakao.maps.LatLngBounds(
-                new kakao.maps.LatLng(33.20084, 126.15684),  // 남서쪽
-                new kakao.maps.LatLng(33.56034, 126.97832)   // 북동쪽
-            );
-
-            searchPlaces();
-
-            function searchPlaces() {
-                var keyword = document.getElementById('keyword').value;
-                if (!keyword.replace(/^\s+|\s+$/g, '')) {
-                    alert('키워드를 입력해주세요!');
-                    return false;
-                }
-                // 제주도 범위 내에서 키워드 검색
-                ps.keywordSearch(keyword, placesSearchCB, { bounds: bounds });
-            }
-
-            function placesSearchCB(data, status, pagination) {
-                if (status === kakao.maps.services.Status.OK) {
-                    displayPlaces(data);
-                    displayPagination(pagination);
-                } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
-                    alert('검색 결과가 존재하지 않습니다.');
-                } else if (status === kakao.maps.services.Status.ERROR) {
-                    alert('검색 결과 중 오류가 발생했습니다.');
-                }
-            }
-
-            function displayPlaces(places) {
-                var listEl = document.getElementById('placesList'), 
-                fragment = document.createDocumentFragment(),
-                bounds = new kakao.maps.LatLngBounds();
-
-                removeAllChildNods(listEl);
-                removeMarker();
-                
-                for (var i=0; i<places.length; i++) {
-                    var placePosition = new kakao.maps.LatLng(places[i].y, places[i].x),
-                        marker = addMarker(placePosition, i), 
-                        itemEl = getListItem(i, places[i]);
-
-                    bounds.extend(placePosition);
-
-                    (function(marker, title, lat, lng) {
-                        kakao.maps.event.addListener(marker, 'mouseover', function() {
-                            displayInfowindow(marker, title);
-                        });
-
-                        kakao.maps.event.addListener(marker, 'mouseout', function() {
-                            infowindow.close();
-                        });
-
-                        itemEl.onmouseover = function () {
-                            displayInfowindow(marker, title);
-                        };
-
-                        itemEl.onmouseout = function () {
-                            infowindow.close();
-                        };
-                    })(marker, places[i].place_name, places[i].y, places[i].x);
-
-                    fragment.appendChild(itemEl);
-                }
-
-                listEl.appendChild(fragment);
-                map.setBounds(bounds);
-            }
-
-            // 검색 결과 목록을 클릭하면 해당 장소로 지도의 중심을 이동하도록 이벤트를 추가하는 코드
-            function getListItem(index, places) {
-                var el = document.createElement('li'),
-                    itemStr = '<span class="markerbg marker_' + (index + 1) + '"></span>' +
-                            '<div class="info">' +
-                            '   <h5>' + places.place_name + '</h5>';
-
-                if (places.road_address_name) {
-                    itemStr += '    <span>' + places.road_address_name + '</span>' +
-                            '   <span class="jibun gray">' + places.address_name + '</span>';
-                } else {
-                    itemStr += '    <span>' + places.address_name + '</span>';
-                }
-
-                itemStr += '  <span class="tel">' + places.phone + '</span>' +
-                        '</div>';
-
-                el.innerHTML = itemStr;
-                el.className = 'item';
-
-                // 검색 결과를 클릭했을 때 해당 위치로 지도 이동 및 중심 변경
-                el.onclick = function() {
-                    // 좌표 정보 확인
-                    console.log('Moving to:', places.y, places.x);
-
-                    var latLng = new kakao.maps.LatLng(parseFloat(places.y), parseFloat(places.x)); // 위도, 경도를 숫자로 변환
-                    
-                    // 지도의 중심을 클릭한 위치로 이동
-                    map.setCenter(latLng);  
-                    
-                    // 기존 마커를 제거
-                    removeMarker();
-
-                    // 새 마커 생성 및 지도에 표시
-                    var marker = new kakao.maps.Marker({
-                        map: map,
-                        position: latLng
-                    });
-
-                    // 마커 배열에 추가
-                    markers.push(marker);
-                };
-
-                return el;
-            }
-
-            function addMarker(position, idx) {
-                var imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_number_blue.png', 
-                    imageSize = new kakao.maps.Size(36, 37),  
-                    imgOptions = {
-                        spriteSize: new kakao.maps.Size(36, 691),
-                        spriteOrigin: new kakao.maps.Point(0, (idx*46)+10),
-                        offset: new kakao.maps.Point(13, 37)
-                    },
-                    markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize, imgOptions),
-                    marker = new kakao.maps.Marker({
-                        position: position, 
-                        image: markerImage 
-                    });
-
-                marker.setMap(map); 
-                markers.push(marker);  
-                return marker;
-            }
-
-            function removeMarker() {
-                for (var i = 0; i < markers.length; i++) {
-                    markers[i].setMap(null);
-                }   
-                markers = [];
-            }
-
-            function displayInfowindow(marker, title) {
-                var content = '<div style="padding:5px;z-index:1;">' + title + '</div>';
-                infowindow.setContent(content);
-                infowindow.open(map, marker);
-            }
-
-            function displayPagination(pagination) {
-                var paginationEl = document.getElementById('pagination'),
-                    fragment = document.createDocumentFragment(),
-                    i;
-
-                while (paginationEl.hasChildNodes()) {
-                    paginationEl.removeChild(paginationEl.lastChild);
-                }
-
-                for (i = 1; i <= pagination.last; i++) {
-                    var el = document.createElement('a');
-                    el.href = "#";
-                    el.innerHTML = i;
-
-                    if (i === pagination.current) {
-                        el.className = 'on';
-                    } else {
-                        el.onclick = (function(i) {
-                            return function() {
-                                pagination.gotoPage(i);
-                            }
-                        })(i);
-                    }
-
-                    fragment.appendChild(el);
-                }
-                paginationEl.appendChild(fragment);
-            }
-
-            function removeAllChildNods(el) {   
-                while (el.hasChildNodes()) {
-                    el.removeChild(el.lastChild);
-                }
-            }
-
-            function sendCoordinates(lat, lng) {
-                fetch('/click', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({latitude: lat, longitude: lng})
-                })
-                .then(response => response.text())
-                .then(data => {
-                    console.log('Server response:', data);
-                    // 지도의 중심을 이동시킴
-                    var latLng = new kakao.maps.LatLng(lat, lng);
-                    map.setCenter(latLng);
-
-                    // 기존 마커 제거 후 새로운 마커 추가
-                    removeMarker();
-                    var marker = new kakao.maps.Marker({
-                        map: map,
-                        position: latLng
-                    });
-                    markers.push(marker);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-            }
-            // 지도 클릭 이벤트 추가
-            kakao.maps.event.addListener(map, 'click', function(mouseEvent) {        
-                // 클릭한 위치의 좌표를 가져옵니다
-                var latlng = mouseEvent.latLng;
-
-                // 위도와 경도를 메시지로 출력하거나 활용
-                var message = '클릭한 위치의 위도는 ' + latlng.getLat() + ' 이고, ';
-                message += '경도는 ' + latlng.getLng() + ' 입니다';
-
-                // 콘솔 출력
-                console.log(message);
-
-                // HTML 결과 영역에 출력 (id: result)
-                var resultDiv = document.getElementById('result');
-                resultDiv.innerHTML = message;
-
-                // 기존 마커를 모두 제거
-                removeMarker();
-
-                // 클릭한 위치에 새로운 마커 추가
-                var marker = new kakao.maps.Marker({
-                    position: latlng, // 클릭한 좌표
-                    map: map // 현재 지도에 추가
-                });
-
-                // 마커 배열에 추가
-                markers.push(marker);
-                coordinates(latlng.getLat(), latlng.getLng())
-
-                function coordinates(lat, lng) {
-                    console.log("get_coordinates 호출됨!");
-                    console.log("위도: " + lat + ", 경도: " + lng);
-
-                    // 서버로 데이터 전송 (예: fetch 활용)
-                    fetch('/click', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ latitude: lat, longitude: lng })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('서버 응답:', data);
-                    })
-                    .catch(error => {
-                        console.error('에러 발생:', error);
-                    });
-                }
-            });
-        </script>
-    </body>
-    </html>
-    ''', search_keyword=search_keyword)
-
-@app.route('/click', methods=['POST'])
+@app.route("/click", methods=["POST"])
 def handle_click():
     global latitude, longitude
     data = request.get_json()
-    latitude = data['latitude']
-    longitude = data['longitude']
-    return 'OK', 200
+    latitude = data["latitude"]
+    longitude = data["longitude"]
+    return "OK", 200
 
-@app.route('/get_coordinates', methods=['GET'])
+
+@app.route("/get_coordinates", methods=["GET"])
 def get_coordinates():
     global latitude, longitude
-    coords = {'latitude': latitude, 'longitude': longitude}
-    
+    coords = {"latitude": latitude, "longitude": longitude}
+    # 데이터 초기화
     latitude = None
     longitude = None
     return jsonify(coords)
 
-if __name__ == '__main__':
-    app.run(host= '0.0.0.0',port=5000)
 
+if __name__ == "__main__":
+    app.run(port=5000)
 
