@@ -160,12 +160,57 @@
             el.innerHTML = itemStr;
             el.className = 'item';
 
+        //     el.onclick = function() {
+        //         map.setCenter(new kakao.maps.LatLng(parseFloat(places.y), parseFloat(places.x)));
+        //     };
+
+        //     return el;
+        // }
             el.onclick = function() {
-                map.setCenter(new kakao.maps.LatLng(parseFloat(places.y), parseFloat(places.x)));
+                var lat = places.y;
+                var lng = places.x;
+
+                var message = '클릭한 위치의 위도는 ' + parseFloat(lat)+ ' 이고, ';
+                message += '경도는 ' + parseFloat(lng) + ' 입니다';
+
+                var resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = message;
+                // 서버로 좌표 전송
+                sendCoordinates(lat, lng);
+
+                // 지도 중심 이동
+                var latLng = new kakao.maps.LatLng(parseFloat(lat), parseFloat(lng));
+                map.setCenter(latLng);
+
+                // 기존 마커 제거 후 새로운 마커 추가
+                removeMarker();
+                var marker = new kakao.maps.Marker({
+                    position: latLng,
+                    map: map
+                });
+                markers.push(marker);
             };
 
             return el;
         }
+        // 서버로 좌표 전송 함수
+        function sendCoordinates(lat, lng) {
+            fetch('/click', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ latitude: lat, longitude: lng })
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log('서버 응답:', data);
+            })
+            .catch(error => {
+                console.error('좌표 전송 실패:', error);
+            });
+        }
+
 
         function addMarker(position, idx) {
             var imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_number_blue.png', 
