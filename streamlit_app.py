@@ -116,16 +116,22 @@ def open_ai_chat(eng_flag=False):
     # 채팅창 생성
     if "messages" not in ss:
         ss.messages = []
-    
     # 기존 메시지 표시
     for message in ss.messages:
         with st.chat_message(message["role"], avatar=message.get("avatar")):
             # HTML 형식으로 렌더링되도록 unsafe_allow_html 설정
             st.markdown(message["content"], unsafe_allow_html=True)
-
+    
+    # ss.question_lists 초기화 
+    if 'question_lists' not in ss:
+        ss.question_lists = None
     # 질문지 생성 
     with st.container():
         clicked_sample_query = questions_recommending(eng_flag)
+
+        # 질문지가 선택되었을 경우 -> None이 아닐 경우, ss.question_lists 초기화
+        if clicked_sample_query != None:
+            ss.question_lists = None
 
     # 페이지 마지막으로 스크롤 자동화
     scroll_to_bottom()
@@ -534,12 +540,18 @@ def trends_info(eng_flag):
         # 가격대 설정을 박스 안에 포함 (st.container로 감쌈)
         price(eng_flag)
 
-        # trend_df에서 데이터를 가져와 상위 10개만 표시
-        df = trend_df(chat_state)
-        
+        # 선택 트렌드가 이전과 달라질 경우만 trend_df 쿼리
+        if ss.trend_status != chat_state.flag_trend:
+            df = ss.trend_status_df = trend_df(chat_state)
+            ss.trend_status = chat_state.flag_trend
+        # streamlit이 돌 때 트렌드 그대로면 일반 기존 df만 반환            
+        elif ss.trend_status == chat_state.flag_trend:
+            df = ss.trend_status_df
+
         if df.empty:
             st.write("앗! 데이터가 없습니다.")
         else:
+            # trend_df에서 데이터를 가져와 상위 10개만 표시
             display_top_10(df)
 
 def side_bar(eng_flag=False):
@@ -595,6 +607,12 @@ def side_bar(eng_flag=False):
             st.write("#### 👇 Discover the hottest restaurant trends for each group! Choose your preferred group and price range below, and we'll help you find the top spots! 🔥")
         else:
             st.write("#### 👇 각 그룹들의 인기 맛집 트렌드를 알려드립니다! 아래에서 원하시는 그룹과 가격대를 선택하고, 인기있는 식당을 찾아보세요! 🔥")        
+        # ss.trend_status 초기화
+        if 'trend_status' not in ss:
+            ss.trend_status = None
+        # ss.trend_status_df 초기화
+        if 'trend_status_df' not in ss:
+            ss.trend_status_df = None
 
         # 트렌드 데이터 출력 (사이드바)
         trends_info(eng_flag)
@@ -650,16 +668,16 @@ def questions_recommending(eng_flag=False):
     if 'clicked_query' not in ss:
         ss.clicked_query = None
 
-    # 질문지 생성
-    parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
-    if eng_flag:
-        chat_state.flag = "영어로"
-        chat_state.flag_eng = "English"
-    else:
-        chat_state.flag_eng = "Korean"
-    chat_state.update(parsed_query=parsed_query)
-    question_lists = get_bot_response(chat_state)
-
+    if ss.question_lists == None:
+        # 질문지 생성
+        parsed_query = parse_query("", predetermined_chat_mode=ChatMode.CHAT_QUESTION_ID)
+        if eng_flag:
+            chat_state.flag = "영어로"
+            chat_state.flag_eng = "English"
+        else:
+            chat_state.flag_eng = "Korean"
+        chat_state.update(parsed_query=parsed_query)
+        ss.question_lists = get_bot_response(chat_state)
     # Show sample queries
     for _ in range(3):
         st.write("")
@@ -667,10 +685,9 @@ def questions_recommending(eng_flag=False):
     def click_button(query):
         ss.clicked_query = query
 
-    for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), question_lists)):
+    for i, (btn_col, sample_query) in enumerate(zip(st.columns(2), ss.question_lists)):
         with btn_col:
             st.button(sample_query, key=f"query{i}", on_click=click_button, args=(sample_query,))
-
     clicked_sample_query = ss.clicked_query
     ss.clicked_query = None  # Reset for next use
     return clicked_sample_query
