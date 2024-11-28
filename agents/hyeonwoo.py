@@ -69,9 +69,8 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
     if len(name_condition)!=0:
         # hugging_retriever 설정
         hugging_retriever = hugging_vectorstore.as_retriever(
-            search_type='similarity_score_threshold',
+            search_type='similarity',
             search_kwargs={
-                'score_threshold': 0.001,
                 'k': 100,
                 'filter': {
                     "$and": [
@@ -96,13 +95,13 @@ def keyword_based(chat_state, hugging_vectorstore, hugging_retriever_baseline, l
 
     row = []
     # 키워드를 넣어 문서 검색
-    if len(keyword) != 0 :
+    if len(keyword) > 1 :
         print('키워드 있음', keyword)
         docs = hugging_retriever.invoke(
             ' '.join(keyword)
         )
     else:
-        print('키워드 앖음')
+        print('키워드 없음')
         print("Keyword - Query Rewrite:", query_rewrite)
         docs = hugging_retriever.invoke(
             ' '.join(query_rewrite)

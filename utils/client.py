@@ -7,6 +7,7 @@ from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import boto3
 import pandas as pd
 import requests
+import zipfile
 vdb_instance = None
 
 load_dotenv()
@@ -35,28 +36,34 @@ class vectordb:
         # self.c_bucket_name = "tamnadb-faiss"
         # self.c_folder_path = "faiss_full_db"
         # self.c_local_path = "/tmp/faiss_full_db"
-        self.c_bucket_name = "tamnadb-chroma"
-        self.c_folder_path = "chroma_db"
-        self.c_local_path = "/tmp/chroma_db"
+        self.c_bucket_name = "tamdadb2-chroma"
+        self.c_folder_path = "chroma_db_restore"
+        self.c_local_path = "/tmp/chroma_db_restore"
         self.s3 = boto3.client('s3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         region_name=os.getenv('AWS_REGION'))
         self.download_s3_folder(self.c_bucket_name, self.c_folder_path, self.c_local_path)
         self.embedding = self.embedding_model()
-        self.hugging_vectorstore = Chroma(persist_directory=self.c_local_path , embedding_function=self.embedding)
+        self.hugging_vectorstore = Chroma(persist_directory=self.c_local_path + '/chroma_db_restore', embedding_function=self.embedding)
     def download_s3_folder(self, bucket_name, folder_path, local_path):
         print('vectorDB 다운로드중')
         os.makedirs(local_path, exist_ok=True)
-        for obj in self.s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)['Contents']:
-            # S3 키에서 파일 이름 추출 후 로컬에 저장
-            print('obj', obj)
-            file_key = obj['Key']
-            if file_key.endswith('/'):
-                continue  # 폴더 경로는 건너뜁니다.
-            local_file_path = os.path.join(local_path, os.path.basename(file_key))
-            self.s3.download_file(bucket_name, file_key, local_file_path)
-    
+        if not os.path.exists(os.path.join(local_path, 'chroma_db_restore')):
+            for obj in self.s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)['Contents']:
+                # S3 키에서 파일 이름 추출 후 로컬에 저장
+                print('obj', obj)
+                file_key = obj['Key']
+                if file_key.endswith('/'):
+                    continue  # 폴더 경로는 건너뜁니다.
+                local_file_path = os.path.join(local_path, os.path.basename(file_key))
+                self.s3.download_file(bucket_name, file_key, local_file_path)
+                print('압축 해제중')
+                zip_file = zipfile.ZipFile(local_file_path)
+                zip_file.extractall(local_path)
+                print('압축 해제 완료')
+        else:
+          print('이미 벡터스토어가 존재합니다.')
 
     def embedding_model(self):
         print('임베딩모델 다운로드중')
